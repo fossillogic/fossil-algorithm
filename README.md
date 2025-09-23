@@ -1,4 +1,4 @@
-# **Fossil Locale by Fossil Logic**
+# **Fossil Algorithms by Fossil Logic**
 
 **Fossil Algorithm** is a lightweight, portable library providing a collection of algorithmic solutions written in pure C with zero external dependencies. Designed for performance and clarity, Fossil Algorithm offers efficient implementations of common data processing techniques, utilities, and patterns suitable for embedded systems, high-performance computing, and cross-platform applications. Its minimal footprint and clean design make it easy to integrate into any project without sacrificing maintainability or speed.
 
