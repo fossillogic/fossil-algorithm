@@ -33,13 +33,13 @@
 // mock objects are set here.
 // * * * * * * * * * * * * * * * * * * * * * * * *
 
-FOSSIL_SUITE(c_algorithm_fixture);
+FOSSIL_SUITE(c_algorithm_sort_fixture);
 
-FOSSIL_SETUP(c_algorithm_fixture) {
+FOSSIL_SETUP(c_algorithm_sort_fixture) {
     // Setup the test fixture
 }
 
-FOSSIL_TEARDOWN(c_algorithm_fixture) {
+FOSSIL_TEARDOWN(c_algorithm_sort_fixture) {
     // Teardown the test fixture
 }
 
@@ -47,98 +47,194 @@ FOSSIL_TEARDOWN(c_algorithm_fixture) {
 // * Fossil Logic Test Sort
 // * * * * * * * * * * * * * * * * * * * * * * * *
 
-static int cmp_int_asc(const void *a, const void *b) {
-    int ai = *(const int *)a;
-    int bi = *(const int *)b;
-    return (ai > bi) - (ai < bi);
-}
-
-static int cmp_int_desc(const void *a, const void *b) {
-    int ai = *(const int *)a;
-    int bi = *(const int *)b;
-    return (bi > ai) - (bi < ai);
-}
-
-FOSSIL_TEST(c_test_sort_auto_basic) {
-    int arr[] = {5, 2, 9, 1, 5, 6};
-    int expected[] = {1, 2, 5, 5, 6, 9};
-    int status = fossil_algorithm_sort_auto(arr, 6, sizeof(int), cmp_int_asc, &FOSSIL_SORT_DEFAULT_OPTIONS);
+FOSSIL_TEST(c_test_sort_exec_i32_quick_asc) {
+    int arr[] = {7, 2, 5, 3, 9};
+    int expected[] = {2, 3, 5, 7, 9};
+    int status = fossil_algorithm_sort_exec(arr, 5, "i32", "quick", "asc");
     ASSUME_ITS_TRUE(status == 0);
     ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
 }
 
-FOSSIL_TEST(c_test_sort_quick_descending) {
-    int arr[] = {3, 1, 4, 1, 5, 9};
-    int expected[] = {9, 5, 4, 3, 1, 1};
-    fossil_sort_options_t opts = { FOSSIL_SORT_DESCENDING, FOSSIL_SORT_UNSTABLE };
-    int status = fossil_algorithm_sort_quick(arr, 6, sizeof(int), cmp_int_desc, &opts);
+FOSSIL_TEST(c_test_sort_exec_i32_merge_desc) {
+    int arr[] = {1, 4, 2, 8, 6};
+    int expected[] = {8, 6, 4, 2, 1};
+    int status = fossil_algorithm_sort_exec(arr, 5, "i32", "merge", "desc");
     ASSUME_ITS_TRUE(status == 0);
     ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
 }
 
-FOSSIL_TEST(c_test_sort_heap) {
-    int arr[] = {8, 4, 6, 2, 7};
-    int expected[] = {2, 4, 6, 7, 8};
-    int status = fossil_algorithm_sort_heap(arr, 5, sizeof(int), cmp_int_asc, &FOSSIL_SORT_DEFAULT_OPTIONS);
+FOSSIL_TEST(c_test_sort_exec_f64_heap_asc) {
+    double arr[] = {2.5, 1.1, 3.3, 0.9};
+    double expected[] = {0.9, 1.1, 2.5, 3.3};
+    int status = fossil_algorithm_sort_exec(arr, 4, "f64", "heap", "asc");
     ASSUME_ITS_TRUE(status == 0);
     ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
 }
 
-FOSSIL_TEST(c_test_sort_insertion) {
-    int arr[] = {10, 5, 3, 8};
-    int expected[] = {3, 5, 8, 10};
-    int status = fossil_algorithm_sort_insertion(arr, 4, sizeof(int), cmp_int_asc, &FOSSIL_SORT_DEFAULT_OPTIONS);
+FOSSIL_TEST(c_test_sort_exec_cstr_insertion_desc) {
+    const char *arr[] = {"pear", "apple", "banana"};
+    const char *expected[] = {"pear", "banana", "apple"};
+    int status = fossil_algorithm_sort_exec(arr, 3, "cstr", "insertion", "desc");
     ASSUME_ITS_TRUE(status == 0);
     ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
 }
 
-FOSSIL_TEST(c_test_sort_shell) {
-    int arr[] = {9, 7, 5, 3, 1};
-    int expected[] = {1, 3, 5, 7, 9};
-    int status = fossil_algorithm_sort_shell(arr, 5, sizeof(int), cmp_int_asc, &FOSSIL_SORT_DEFAULT_OPTIONS);
-    ASSUME_ITS_TRUE(status == 0);
-    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
-}
-
-FOSSIL_TEST(c_test_sort_radix_u32) {
-    uint32_t arr[] = {100, 2, 50, 25, 75};
-    uint32_t expected[] = {2, 25, 50, 75, 100};
-    fossil_sort_options_t opts = { FOSSIL_SORT_ASCENDING, FOSSIL_SORT_UNSTABLE };
-    int status = fossil_algorithm_sort_radix(arr, 5, sizeof(uint32_t), NULL, &opts);
-    ASSUME_ITS_TRUE(status == 0);
-    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
-}
-
-FOSSIL_TEST(c_test_sort_counting_u8) {
-    uint8_t arr[] = {5, 1, 3, 2, 4};
+FOSSIL_TEST(c_test_sort_exec_u8_counting_asc) {
+    uint8_t arr[] = {4, 2, 5, 1, 3};
     uint8_t expected[] = {1, 2, 3, 4, 5};
-    fossil_sort_options_t opts = { FOSSIL_SORT_ASCENDING, FOSSIL_SORT_UNSTABLE };
-    int status = fossil_algorithm_sort_counting(arr, 5, sizeof(uint8_t), NULL, &opts);
+    int status = fossil_algorithm_sort_exec(arr, 5, "u8", "counting", "asc");
     ASSUME_ITS_TRUE(status == 0);
     ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
 }
 
-FOSSIL_TEST(c_test_sort_bubble) {
-    int arr[] = {4, 2, 3, 1};
-    int expected[] = {1, 2, 3, 4};
-    int status = fossil_algorithm_sort_bubble(arr, 4, sizeof(int), cmp_int_asc, &FOSSIL_SORT_DEFAULT_OPTIONS);
+FOSSIL_TEST(c_test_sort_exec_u32_radix_desc) {
+    uint32_t arr[] = {10, 100, 1, 50};
+    uint32_t expected[] = {100, 50, 10, 1};
+    int status = fossil_algorithm_sort_exec(arr, 4, "u32", "radix", "desc");
     ASSUME_ITS_TRUE(status == 0);
     ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
 }
 
+FOSSIL_TEST(c_test_sort_exec_char_shell_asc) {
+    char arr[] = {'d', 'a', 'c', 'b'};
+    char expected[] = {'a', 'b', 'c', 'd'};
+    int status = fossil_algorithm_sort_exec(arr, 4, "char", "shell", "asc");
+    ASSUME_ITS_TRUE(status == 0);
+    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
+}
+
+FOSSIL_TEST(c_test_sort_exec_bool_bubble_desc) {
+    bool arr[] = {true, false, true, false};
+    bool expected[] = {true, true, false, false};
+    int status = fossil_algorithm_sort_exec(arr, 4, "bool", "bubble", "desc");
+    ASSUME_ITS_TRUE(status == 0);
+    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
+}
+
+FOSSIL_TEST(c_test_sort_exec_invalid_type) {
+    int arr[] = {1, 2, 3};
+    int status = fossil_algorithm_sort_exec(arr, 3, "unknown", "quick", "asc");
+    ASSUME_ITS_TRUE(status == -2);
+}
+
+FOSSIL_TEST(c_test_sort_exec_invalid_algorithm) {
+    int arr[] = {1, 2, 3};
+    int status = fossil_algorithm_sort_exec(arr, 3, "i32", "notalgo", "asc");
+    ASSUME_ITS_TRUE(status == -3);
+}
+
+FOSSIL_TEST(c_test_sort_type_sizeof_supported) {
+    ASSUME_ITS_TRUE(fossil_algorithm_sort_type_sizeof("i32") == sizeof(int32_t));
+    ASSUME_ITS_TRUE(fossil_algorithm_sort_type_sizeof("f64") == sizeof(double));
+    ASSUME_ITS_TRUE(fossil_algorithm_sort_type_sizeof("cstr") == sizeof(char *));
+}
+
+FOSSIL_TEST(c_test_sort_type_supported_true_false) {
+    ASSUME_ITS_TRUE(fossil_algorithm_sort_type_supported("i16") == true);
+    ASSUME_ITS_TRUE(fossil_algorithm_sort_type_supported("null") == false);
+}
+
+FOSSIL_TEST(c_test_sort_exec_i64_merge_asc) {
+    int64_t arr[] = {10000000000LL, 1LL, -5LL, 0LL, 999LL};
+    int64_t expected[] = {-5LL, 0LL, 1LL, 999LL, 10000000000LL};
+    int status = fossil_algorithm_sort_exec(arr, 5, "i64", "merge", "asc");
+    ASSUME_ITS_TRUE(status == 0);
+    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
+}
+
+FOSSIL_TEST(c_test_sort_exec_u16_heap_desc) {
+    uint16_t arr[] = {10, 2, 30, 25, 5};
+    uint16_t expected[] = {30, 25, 10, 5, 2};
+    int status = fossil_algorithm_sort_exec(arr, 5, "u16", "heap", "desc");
+    ASSUME_ITS_TRUE(status == 0);
+    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
+}
+
+FOSSIL_TEST(c_test_sort_exec_f32_shell_asc) {
+    float arr[] = {3.1f, 2.2f, 5.5f, 1.0f};
+    float expected[] = {1.0f, 2.2f, 3.1f, 5.5f};
+    int status = fossil_algorithm_sort_exec(arr, 4, "f32", "shell", "asc");
+    ASSUME_ITS_TRUE(status == 0);
+    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
+}
+
+FOSSIL_TEST(c_test_sort_exec_size_bubble_desc) {
+    size_t arr[] = {100, 50, 200, 10};
+    size_t expected[] = {200, 100, 50, 10};
+    int status = fossil_algorithm_sort_exec(arr, 4, "size", "bubble", "desc");
+    ASSUME_ITS_TRUE(status == 0);
+    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
+}
+
+FOSSIL_TEST(c_test_sort_exec_datetime_insertion_asc) {
+    int64_t arr[] = {1672531200LL, 1609459200LL, 1640995200LL};
+    int64_t expected[] = {1609459200LL, 1640995200LL, 1672531200LL};
+    int status = fossil_algorithm_sort_exec(arr, 3, "datetime", "insertion", "asc");
+    ASSUME_ITS_TRUE(status == 0);
+    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
+}
+
+FOSSIL_TEST(c_test_sort_exec_oct_quick_desc) {
+    uint64_t arr[] = {012, 010, 07, 015};
+    uint64_t expected[] = {13, 10, 8, 7}; // 015=13, 012=10, 010=8, 07=7
+    int status = fossil_algorithm_sort_exec(arr, 4, "oct", "quick", "desc");
+    ASSUME_ITS_TRUE(status == 0);
+    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
+}
+
+FOSSIL_TEST(c_test_sort_exec_bin_merge_asc) {
+    uint64_t arr[] = {0b101, 0b11, 0b1000, 0b1};
+    uint64_t expected[] = {1, 3, 5, 8};
+    int status = fossil_algorithm_sort_exec(arr, 4, "bin", "merge", "asc");
+    ASSUME_ITS_TRUE(status == 0);
+    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
+}
+
+FOSSIL_TEST(c_test_sort_exec_empty_array) {
+    int arr[1] = {42};
+    int expected[1] = {42};
+    int status = fossil_algorithm_sort_exec(arr, 0, "i32", "quick", "asc");
+    ASSUME_ITS_TRUE(status == -1);
+    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
+}
+
+FOSSIL_TEST(c_test_sort_exec_null_base) {
+    int status = fossil_algorithm_sort_exec(NULL, 5, "i32", "quick", "asc");
+    ASSUME_ITS_TRUE(status == -1);
+}
+
+FOSSIL_TEST(c_test_sort_exec_null_type_id) {
+    int arr[] = {1, 2, 3};
+    int status = fossil_algorithm_sort_exec(arr, 3, NULL, "quick", "asc");
+    ASSUME_ITS_TRUE(status == -1);
+}
 
 // * * * * * * * * * * * * * * * * * * * * * * * *
 // * Fossil Logic Test Pool
 // * * * * * * * * * * * * * * * * * * * * * * * *
 FOSSIL_TEST_GROUP(c_sort_tests) {
-    FOSSIL_TEST_ADD(c_algorithm_fixture, c_test_sort_auto_basic);
-    FOSSIL_TEST_ADD(c_algorithm_fixture, c_test_sort_quick_descending);
-    FOSSIL_TEST_ADD(c_algorithm_fixture, c_test_sort_heap);
-    FOSSIL_TEST_ADD(c_algorithm_fixture, c_test_sort_insertion);
-    FOSSIL_TEST_ADD(c_algorithm_fixture, c_test_sort_shell);
-    FOSSIL_TEST_ADD(c_algorithm_fixture, c_test_sort_radix_u32);
-    FOSSIL_TEST_ADD(c_algorithm_fixture, c_test_sort_counting_u8);
-    FOSSIL_TEST_ADD(c_algorithm_fixture, c_test_sort_bubble);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_i32_quick_asc);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_i32_merge_desc);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_f64_heap_asc);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_cstr_insertion_desc);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_u8_counting_asc);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_u32_radix_desc);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_char_shell_asc);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_bool_bubble_desc);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_invalid_type);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_invalid_algorithm);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_type_sizeof_supported);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_type_supported_true_false);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_i64_merge_asc);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_u16_heap_desc);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_f32_shell_asc);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_size_bubble_desc);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_datetime_insertion_asc);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_oct_quick_desc);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_bin_merge_asc);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_empty_array);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_null_base);
+    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_null_type_id);
 
-    FOSSIL_TEST_REGISTER(c_algorithm_fixture);
+    FOSSIL_TEST_REGISTER(c_algorithm_sort_fixture);
 } // end of tests

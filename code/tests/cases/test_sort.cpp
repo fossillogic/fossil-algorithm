@@ -33,13 +33,13 @@
 // mock objects are set here.
 // * * * * * * * * * * * * * * * * * * * * * * * *
 
-FOSSIL_SUITE(cpp_algorithm_fixture);
+FOSSIL_SUITE(cpp_algorithm_sort_fixture);
 
-FOSSIL_SETUP(cpp_algorithm_fixture) {
+FOSSIL_SETUP(cpp_algorithm_sort_fixture) {
     // Setup the test fixture
 }
 
-FOSSIL_TEARDOWN(cpp_algorithm_fixture) {
+FOSSIL_TEARDOWN(cpp_algorithm_sort_fixture) {
     // Teardown the test fixture
 }
 
@@ -47,98 +47,161 @@ FOSSIL_TEARDOWN(cpp_algorithm_fixture) {
 // * Fossil Logic Test Sort
 // * * * * * * * * * * * * * * * * * * * * * * * *
 
-static int cpp_cmp_int_asc(const void *a, const void *b) {
-    int ai = *(const int *)a;
-    int bi = *(const int *)b;
-    return (ai > bi) - (ai < bi);
-}
-
-static int cpp_cmp_int_desc(const void *a, const void *b) {
-    int ai = *(const int *)a;
-    int bi = *(const int *)b;
-    return (bi > ai) - (bi < ai);
-}
-
-FOSSIL_TEST(cpp_test_sort_auto_basic) {
-    int arr[] = {5, 2, 9, 1, 5, 6};
-    int expected[] = {1, 2, 5, 5, 6, 9};
-    int status = fossil::algorithm::Sort::auto_sort(arr, 6, sizeof(int), cpp_cmp_int_asc);
+FOSSIL_TEST(cpp_test_sort_exec_i32_quick_asc) {
+    int arr[] = {7, 2, 5, 3, 9};
+    int expected[] = {2, 3, 5, 7, 9};
+    int status = fossil::algorithm::Sort::exec(arr, 5, "i32", "quick", "asc");
     ASSUME_ITS_TRUE(status == 0);
     ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
 }
 
-FOSSIL_TEST(cpp_test_sort_quick_descending) {
-    int arr[] = {3, 1, 4, 1, 5, 9};
-    int expected[] = {9, 5, 4, 3, 1, 1};
-    fossil_sort_options_t opts = { FOSSIL_SORT_DESCENDING, FOSSIL_SORT_UNSTABLE };
-    int status = fossil::algorithm::Sort::quick_sort(arr, 6, sizeof(int), cpp_cmp_int_desc, &opts);
+FOSSIL_TEST(cpp_test_sort_exec_i32_merge_desc) {
+    int arr[] = {1, 4, 2, 8, 6};
+    int expected[] = {8, 6, 4, 2, 1};
+    int status = fossil::algorithm::Sort::exec(arr, 5, "i32", "merge", "desc");
     ASSUME_ITS_TRUE(status == 0);
     ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
 }
 
-FOSSIL_TEST(cpp_test_sort_heap) {
-    int arr[] = {8, 4, 6, 2, 7};
-    int expected[] = {2, 4, 6, 7, 8};
-    int status = fossil::algorithm::Sort::heap_sort(arr, 5, sizeof(int), cpp_cmp_int_asc);
+FOSSIL_TEST(cpp_test_sort_exec_f64_heap_asc) {
+    double arr[] = {2.5, 1.1, 3.3, 0.9};
+    double expected[] = {0.9, 1.1, 2.5, 3.3};
+    int status = fossil::algorithm::Sort::exec(arr, 4, "f64", "heap", "asc");
     ASSUME_ITS_TRUE(status == 0);
     ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
 }
 
-FOSSIL_TEST(cpp_test_sort_insertion) {
-    int arr[] = {10, 5, 3, 8};
-    int expected[] = {3, 5, 8, 10};
-    int status = fossil::algorithm::Sort::insertion_sort(arr, 4, sizeof(int), cpp_cmp_int_asc);
+FOSSIL_TEST(cpp_test_sort_exec_cstr_insertion_desc) {
+    const char *arr[] = {"pear", "apple", "banana"};
+    const char *expected[] = {"pear", "banana", "apple"};
+    int status = fossil::algorithm::Sort::exec(arr, 3, "cstr", "insertion", "desc");
     ASSUME_ITS_TRUE(status == 0);
     ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
 }
 
-FOSSIL_TEST(cpp_test_sort_shell) {
-    int arr[] = {9, 7, 5, 3, 1};
-    int expected[] = {1, 3, 5, 7, 9};
-    int status = fossil::algorithm::Sort::shell_sort(arr, 5, sizeof(int), cpp_cmp_int_asc);
-    ASSUME_ITS_TRUE(status == 0);
-    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
-}
-
-FOSSIL_TEST(cpp_test_sort_radix_u32) {
-    uint32_t arr[] = {100, 2, 50, 25, 75};
-    uint32_t expected[] = {2, 25, 50, 75, 100};
-    fossil_sort_options_t opts = { FOSSIL_SORT_ASCENDING, FOSSIL_SORT_UNSTABLE };
-    int status = fossil::algorithm::Sort::radix_sort(arr, 5, sizeof(uint32_t), nullptr, &opts);
-    ASSUME_ITS_TRUE(status == 0);
-    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
-}
-
-FOSSIL_TEST(cpp_test_sort_counting_u8) {
-    uint8_t arr[] = {5, 1, 3, 2, 4};
+FOSSIL_TEST(cpp_test_sort_exec_u8_counting_asc) {
+    uint8_t arr[] = {4, 2, 5, 1, 3};
     uint8_t expected[] = {1, 2, 3, 4, 5};
-    fossil_sort_options_t opts = { FOSSIL_SORT_ASCENDING, FOSSIL_SORT_UNSTABLE };
-    int status = fossil::algorithm::Sort::counting_sort(arr, 5, sizeof(uint8_t), nullptr, &opts);
+    int status = fossil::algorithm::Sort::exec(arr, 5, "u8", "counting", "asc");
     ASSUME_ITS_TRUE(status == 0);
     ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
 }
 
-FOSSIL_TEST(cpp_test_sort_bubble) {
-    int arr[] = {4, 2, 3, 1};
-    int expected[] = {1, 2, 3, 4};
-    int status = fossil::algorithm::Sort::bubble_sort(arr, 4, sizeof(int), cpp_cmp_int_asc);
+FOSSIL_TEST(cpp_test_sort_exec_u32_radix_desc) {
+    uint32_t arr[] = {10, 100, 1, 50};
+    uint32_t expected[] = {100, 50, 10, 1};
+    int status = fossil::algorithm::Sort::exec(arr, 4, "u32", "radix", "desc");
     ASSUME_ITS_TRUE(status == 0);
     ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
 }
 
+FOSSIL_TEST(cpp_test_sort_exec_char_shell_asc) {
+    char arr[] = {'d', 'a', 'c', 'b'};
+    char expected[] = {'a', 'b', 'c', 'd'};
+    int status = fossil::algorithm::Sort::exec(arr, 4, "char", "shell", "asc");
+    ASSUME_ITS_TRUE(status == 0);
+    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
+}
+
+FOSSIL_TEST(cpp_test_sort_exec_bool_bubble_desc) {
+    bool arr[] = {true, false, true, false};
+    bool expected[] = {true, true, false, false};
+    int status = fossil::algorithm::Sort::exec(arr, 4, "bool", "bubble", "desc");
+    ASSUME_ITS_TRUE(status == 0);
+    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
+}
+
+FOSSIL_TEST(cpp_test_sort_exec_invalid_type) {
+    int arr[] = {1, 2, 3};
+    int status = fossil::algorithm::Sort::exec(arr, 3, "unknown", "quick", "asc");
+    ASSUME_ITS_TRUE(status == -2);
+}
+
+FOSSIL_TEST(cpp_test_sort_exec_invalid_algorithm) {
+    int arr[] = {1, 2, 3};
+    int status = fossil::algorithm::Sort::exec(arr, 3, "i32", "notalgo", "asc");
+    ASSUME_ITS_TRUE(status == -3);
+}
+
+FOSSIL_TEST(cpp_test_sort_type_sizeof_supported) {
+    ASSUME_ITS_TRUE(fossil::algorithm::Sort::type_sizeof("i32") == sizeof(int32_t));
+    ASSUME_ITS_TRUE(fossil::algorithm::Sort::type_sizeof("f64") == sizeof(double));
+    ASSUME_ITS_TRUE(fossil::algorithm::Sort::type_sizeof("cstr") == sizeof(char *));
+}
+
+FOSSIL_TEST(cpp_test_sort_type_supported_true_false) {
+    ASSUME_ITS_TRUE(fossil::algorithm::Sort::type_supported("i16") == true);
+    ASSUME_ITS_TRUE(fossil::algorithm::Sort::type_supported("null") == false);
+}
+
+FOSSIL_TEST(cpp_test_sort_exec_i16_quick_asc) {
+    int16_t arr[] = {300, 100, 200, 400};
+    int16_t expected[] = {100, 200, 300, 400};
+    int status = fossil::algorithm::Sort::exec(arr, 4, "i16", "quick", "asc");
+    ASSUME_ITS_TRUE(status == 0);
+    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
+}
+
+FOSSIL_TEST(cpp_test_sort_exec_f32_merge_desc) {
+    float arr[] = {1.5f, 3.2f, 0.7f, 2.8f};
+    float expected[] = {3.2f, 2.8f, 1.5f, 0.7f};
+    int status = fossil::algorithm::Sort::exec(arr, 4, "f32", "merge", "desc");
+    ASSUME_ITS_TRUE(status == 0);
+    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
+}
+
+FOSSIL_TEST(cpp_test_sort_exec_empty_array) {
+    int arr[] = {};
+    int status = fossil::algorithm::Sort::exec(arr, 0, "i32", "quick", "asc");
+    ASSUME_ITS_TRUE(status == 0);
+}
+
+FOSSIL_TEST(cpp_test_sort_exec_single_element) {
+    double arr[] = {42.0};
+    double expected[] = {42.0};
+    int status = fossil::algorithm::Sort::exec(arr, 1, "f64", "heap", "asc");
+    ASSUME_ITS_TRUE(status == 0);
+    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
+}
+
+FOSSIL_TEST(cpp_test_sort_exec_already_sorted_asc) {
+    uint8_t arr[] = {1, 2, 3, 4, 5};
+    uint8_t expected[] = {1, 2, 3, 4, 5};
+    int status = fossil::algorithm::Sort::exec(arr, 5, "u8", "bubble", "asc");
+    ASSUME_ITS_TRUE(status == 0);
+    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
+}
+
+FOSSIL_TEST(cpp_test_sort_exec_reverse_sorted_desc) {
+    int arr[] = {5, 4, 3, 2, 1};
+    int expected[] = {5, 4, 3, 2, 1};
+    int status = fossil::algorithm::Sort::exec(arr, 5, "i32", "insertion", "desc");
+    ASSUME_ITS_TRUE(status == 0);
+    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
+}
 
 // * * * * * * * * * * * * * * * * * * * * * * * *
 // * Fossil Logic Test Pool
 // * * * * * * * * * * * * * * * * * * * * * * * *
 FOSSIL_TEST_GROUP(cpp_sort_tests) {
-    FOSSIL_TEST_ADD(cpp_algorithm_fixture, cpp_test_sort_auto_basic);
-    FOSSIL_TEST_ADD(cpp_algorithm_fixture, cpp_test_sort_quick_descending);
-    FOSSIL_TEST_ADD(cpp_algorithm_fixture, cpp_test_sort_heap);
-    FOSSIL_TEST_ADD(cpp_algorithm_fixture, cpp_test_sort_insertion);
-    FOSSIL_TEST_ADD(cpp_algorithm_fixture, cpp_test_sort_shell);
-    FOSSIL_TEST_ADD(cpp_algorithm_fixture, cpp_test_sort_radix_u32);
-    FOSSIL_TEST_ADD(cpp_algorithm_fixture, cpp_test_sort_counting_u8);
-    FOSSIL_TEST_ADD(cpp_algorithm_fixture, cpp_test_sort_bubble);
+    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_i32_quick_asc);
+    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_i32_merge_desc);
+    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_f64_heap_asc);
+    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_cstr_insertion_desc);
+    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_u8_counting_asc);
+    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_u32_radix_desc);
+    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_char_shell_asc);
+    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_bool_bubble_desc);
+    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_invalid_type);
+    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_invalid_algorithm);
+    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_type_sizeof_supported);
+    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_type_supported_true_false);
+    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_i16_quick_asc);
+    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_f32_merge_desc);
+    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_empty_array);
+    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_single_element);
+    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_already_sorted_asc);
+    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_reverse_sorted_desc);
 
-    FOSSIL_TEST_REGISTER(cpp_algorithm_fixture);
+    FOSSIL_TEST_REGISTER(cpp_algorithm_sort_fixture);
 } // end of tests
