@@ -23,549 +23,591 @@
  * -----------------------------------------------------------------------------
  */
 #include "fossil/algorithm/sort.h"
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stddef.h>
+
+// ======================================================
+// Supported Identifiers
+// ======================================================
 
 /**
- * @brief Automatically selects and applies the optimal sorting algorithm.
+ * @brief Supported type identifiers for @ref fossil_algorithm_sort_exec.
  *
- * Chooses the best algorithm based on input size and options.
- *
- * @param base Pointer to the array to sort.
- * @param count Number of elements in the array.
- * @param size Size of each element.
- * @param cmp Comparison function.
- * @param options Pointer to sorting options.
- * @return int Status code (0 for success).
+ * | Category   | Types |
+ * |-------------|-------------------------------|
+ * | Signed Int  | "i8", "i16", "i32", "i64"     |
+ * | Unsigned Int| "u8", "u16", "u32", "u64"     |
+ * | Floating    | "f32", "f64"                  |
+ * | String/Text | "cstr", "char"                |
+ * | Boolean     | "bool"                        |
+ * | Extended    | "hex", "oct", "bin", "size", "datetime", "duration" |
+ * | Generic     | "any", "null"                 |
  */
-int fossil_algorithm_sort_auto(
-    void *base,
-    size_t count,
-    size_t size,
-    fossil_compare_fn cmp,
-    const fossil_sort_options_t *options
-)
-{
-    if (count <= 1)
-        return 0;
-
-    if (!options)
-        options = &(fossil_sort_options_t)FOSSIL_SORT_DEFAULT_OPTIONS;
-
-    // Choose algorithm based on size and stability
-    if (count < 32) {
-        // Small arrays: insertion sort is fast
-        return fossil_algorithm_sort_insertion(base, count, size, cmp, options);
-    } else if (options->stable == FOSSIL_SORT_STABLE) {
-        // Stable sort requested: use merge sort
-        return fossil_algorithm_sort_merge(base, count, size, cmp, options);
-    } else {
-        // Default: quicksort for speed
-        return fossil_algorithm_sort_quick(base, count, size, cmp, options);
-    }
-}
+#define FOSSIL_SORT_SUPPORTED_TYPE_IDS \
+    "i8, i16, i32, i64, u8, u16, u32, u64, " \
+    "f32, f64, cstr, char, bool, " \
+    "hex, oct, bin, size, datetime, duration, any, null"
 
 /**
- * @brief Sorts using the quicksort algorithm.
+ * @brief Supported algorithm identifiers for @ref fossil_algorithm_sort_exec.
  *
- * @param base Pointer to the array to sort.
- * @param count Number of elements.
- * @param size Size of each element.
- * @param cmp Comparison function.
- * @param options Pointer to sorting options.
- * @return int Status code.
+ * | Algorithm | Description |
+ * |------------|----------------------------|
+ * | "auto"     | Automatically selects the best algorithm |
+ * | "quick"    | Quicksort (default for large arrays)     |
+ * | "merge"    | Stable merge sort                        |
+ * | "heap"     | Heap sort (memory-efficient)              |
+ * | "insertion"| Simple insertion sort (small arrays)      |
+ * | "shell"    | Shell sort (incremental gap sort)         |
+ * | "radix"    | Radix sort (integer keys only)            |
+ * | "counting" | Counting sort (integer range keys only)   |
+ * | "bubble"   | Bubble sort (testing/educational only)    |
  */
-static void fossil_swap_bytes(char *a, char *b, size_t size)
-{
-    while (size--) {
-        char tmp = *a;
-        *a++ = *b;
-        *b++ = tmp;
-    }
+#define FOSSIL_SORT_SUPPORTED_ALGO_IDS \
+    "auto, quick, merge, heap, insertion, shell, radix, counting, bubble"
+
+/**
+ * @brief Supported order identifiers for @ref fossil_algorithm_sort_exec.
+ *
+ * - "asc"  → ascending order (default)
+ * - "desc" → descending order
+ */
+#define FOSSIL_SORT_SUPPORTED_ORDER_IDS "asc, desc"
+
+// ======================================================
+// Local helpers
+// ======================================================
+
+typedef int (*fossil_sort_compare_fn)(const void *, const void *, bool desc);
+
+static inline int compare_i8(const void *a, const void *b, bool desc) {
+    int8_t va = *(const int8_t *)a;
+    int8_t vb = *(const int8_t *)b;
+    return desc ? (vb > va) - (vb < va) : (va > vb) - (va < vb);
 }
 
-static int fossil_quick_partition(
-    char *base, size_t low, size_t high, size_t size,
-    fossil_compare_fn cmp, const fossil_sort_options_t *options
-)
-{
-    char *pivot = base + high * size;
-    size_t i = low;
-    for (size_t j = low; j < high; ++j) {
-        int res = cmp(base + j * size, pivot);
-        if (options && options->order == FOSSIL_SORT_DESCENDING)
-            res = -res;
-        if (res < 0) {
-            fossil_swap_bytes(base + i * size, base + j * size, size);
-            i++;
-        }
-    }
-    fossil_swap_bytes(base + i * size, pivot, size);
-    return i;
+static inline int compare_i16(const void *a, const void *b, bool desc) {
+    int16_t va = *(const int16_t *)a;
+    int16_t vb = *(const int16_t *)b;
+    return desc ? (vb > va) - (vb < va) : (va > vb) - (va < vb);
 }
 
-static void fossil_quick_sort(
-    char *base, size_t low, size_t high, size_t size,
-    fossil_compare_fn cmp, const fossil_sort_options_t *options
-)
-{
-    if (low < high) {
-        int pi = fossil_quick_partition(base, low, high, size, cmp, options);
-        if (pi > 0)
-            fossil_quick_sort(base, low, pi - 1, size, cmp, options);
-        fossil_quick_sort(base, pi + 1, high, size, cmp, options);
-    }
+static inline int compare_i32(const void *a, const void *b, bool desc) {
+    int32_t va = *(const int32_t *)a;
+    int32_t vb = *(const int32_t *)b;
+    return desc ? (vb > va) - (vb < va) : (va > vb) - (va < vb);
 }
 
-int fossil_algorithm_sort_quick(
-    void *base,
-    size_t count,
-    size_t size,
-    fossil_compare_fn cmp,
-    const fossil_sort_options_t *options
-)
-{
-    if (count <= 1 || !base || !cmp)
-        return 0;
-    fossil_quick_sort((char *)base, 0, count - 1, size, cmp, options);
+static inline int compare_i64(const void *a, const void *b, bool desc) {
+    int64_t va = *(const int64_t *)a;
+    int64_t vb = *(const int64_t *)b;
+    return desc ? (vb > va) - (vb < va) : (va > vb) - (va < vb);
+}
+
+static inline int compare_u8(const void *a, const void *b, bool desc) {
+    uint8_t va = *(const uint8_t *)a;
+    uint8_t vb = *(const uint8_t *)b;
+    return desc ? (vb > va) - (vb < va) : (va > vb) - (va < vb);
+}
+
+static inline int compare_u16(const void *a, const void *b, bool desc) {
+    uint16_t va = *(const uint16_t *)a;
+    uint16_t vb = *(const uint16_t *)b;
+    return desc ? (vb > va) - (vb < va) : (va > vb) - (va < vb);
+}
+
+static inline int compare_u32(const void *a, const void *b, bool desc) {
+    uint32_t va = *(const uint32_t *)a;
+    uint32_t vb = *(const uint32_t *)b;
+    return desc ? (vb > va) - (vb < va) : (va > vb) - (va < vb);
+}
+
+static inline int compare_u64(const void *a, const void *b, bool desc) {
+    uint64_t va = *(const uint64_t *)a;
+    uint64_t vb = *(const uint64_t *)b;
+    return desc ? (vb > va) - (vb < va) : (va > vb) - (va < vb);
+}
+
+// Hex, Oct, Bin: treat as unsigned integer for sorting
+static inline int compare_hex(const void *a, const void *b, bool desc) {
+    uint64_t va = *(const uint64_t *)a;
+    uint64_t vb = *(const uint64_t *)b;
+    return desc ? (vb > va) - (vb < va) : (va > vb) - (va < vb);
+}
+
+static inline int compare_oct(const void *a, const void *b, bool desc) {
+    uint64_t va = *(const uint64_t *)a;
+    uint64_t vb = *(const uint64_t *)b;
+    return desc ? (vb > va) - (vb < va) : (va > vb) - (va < vb);
+}
+
+static inline int compare_bin(const void *a, const void *b, bool desc) {
+    uint64_t va = *(const uint64_t *)a;
+    uint64_t vb = *(const uint64_t *)b;
+    return desc ? (vb > va) - (vb < va) : (va > vb) - (va < vb);
+}
+
+static inline int compare_f32(const void *a, const void *b, bool desc) {
+    float va = *(const float *)a;
+    float vb = *(const float *)b;
+    if (va < vb) return desc ? 1 : -1;
+    if (va > vb) return desc ? -1 : 1;
     return 0;
 }
 
-/**
- * @brief Sorts using the merge sort algorithm.
- *
- * @param base Pointer to the array to sort.
- * @param count Number of elements.
- * @param size Size of each element.
- * @param cmp Comparison function.
- * @param options Pointer to sorting options.
- * @return int Status code.
- */
+static inline int compare_f64(const void *a, const void *b, bool desc) {
+    double va = *(const double *)a;
+    double vb = *(const double *)b;
+    if (va < vb) return desc ? 1 : -1;
+    if (va > vb) return desc ? -1 : 1;
+    return 0;
+}
+
+static inline int compare_cstr(const void *a, const void *b, bool desc) {
+    const char *sa = *(const char * const *)a;
+    const char *sb = *(const char * const *)b;
+    int cmp = strcmp(sa ? sa : "", sb ? sb : "");
+    return desc ? -cmp : cmp;
+}
+
+static inline int compare_char(const void *a, const void *b, bool desc) {
+    char va = *(const char *)a;
+    char vb = *(const char *)b;
+    if (va == vb) return 0;
+    return desc ? (vb > va) - (vb < va) : (va > vb) - (va < vb);
+}
+
+static inline int compare_bool(const void *a, const void *b, bool desc) {
+    bool va = *(const bool *)a;
+    bool vb = *(const bool *)b;
+    if (va == vb) return 0;
+    return desc ? (vb ? 1 : -1) : (va ? 1 : -1);
+}
+
+static inline int compare_size(const void *a, const void *b, bool desc) {
+    size_t va = *(const size_t *)a;
+    size_t vb = *(const size_t *)b;
+    return desc ? (vb > va) - (vb < va) : (va > vb) - (va < vb);
+}
+
+// For datetime and duration, treat as int64_t for sorting
+static inline int compare_datetime(const void *a, const void *b, bool desc) {
+    int64_t va = *(const int64_t *)a;
+    int64_t vb = *(const int64_t *)b;
+    return desc ? (vb > va) - (vb < va) : (va > vb) - (va < vb);
+}
+
+static inline int compare_duration(const void *a, const void *b, bool desc) {
+    int64_t va = *(const int64_t *)a;
+    int64_t vb = *(const int64_t *)b;
+    return desc ? (vb > va) - (vb < va) : (va > vb) - (va < vb);
+}
+
+
+// ======================================================
+// Type system utilities
+// ======================================================
+
+size_t fossil_algorithm_sort_type_sizeof(const char *type_id) {
+    if (!type_id) return 0;
+
+    if (!strcmp(type_id, "i8"))  return sizeof(int8_t);
+    if (!strcmp(type_id, "i16")) return sizeof(int16_t);
+    if (!strcmp(type_id, "i32")) return sizeof(int32_t);
+    if (!strcmp(type_id, "i64")) return sizeof(int64_t);
+
+    if (!strcmp(type_id, "u8"))  return sizeof(uint8_t);
+    if (!strcmp(type_id, "u16")) return sizeof(uint16_t);
+    if (!strcmp(type_id, "u32")) return sizeof(uint32_t);
+    if (!strcmp(type_id, "u64")) return sizeof(uint64_t);
+
+    if (!strcmp(type_id, "f32")) return sizeof(float);
+    if (!strcmp(type_id, "f64")) return sizeof(double);
+
+    if (!strcmp(type_id, "bool")) return sizeof(bool);
+    if (!strcmp(type_id, "char")) return sizeof(char);
+    if (!strcmp(type_id, "cstr")) return sizeof(char *);
+
+    if (!strcmp(type_id, "size")) return sizeof(size_t);
+
+    if (!strcmp(type_id, "hex")) return sizeof(uint64_t);
+    if (!strcmp(type_id, "oct")) return sizeof(uint64_t);
+    if (!strcmp(type_id, "bin")) return sizeof(uint64_t);
+
+    if (!strcmp(type_id, "datetime")) return sizeof(int64_t);
+    if (!strcmp(type_id, "duration")) return sizeof(int64_t);
+
+    // Extended or dynamic types like "any" and "null" have no fixed width
+    return 0;
+}
+
+bool fossil_algorithm_sort_type_supported(const char *type_id) {
+    return fossil_algorithm_sort_type_sizeof(type_id) != 0;
+}
+
+// ======================================================
+// Algorithm selection
+// ======================================================
+
+static fossil_sort_compare_fn fossil_sort_select_comparator(const char *type_id) {
+    if (!strcmp(type_id, "i8"))       return compare_i8;
+    if (!strcmp(type_id, "i16"))      return compare_i16;
+    if (!strcmp(type_id, "i32"))      return compare_i32;
+    if (!strcmp(type_id, "i64"))      return compare_i64;
+
+    if (!strcmp(type_id, "u8"))       return compare_u8;
+    if (!strcmp(type_id, "u16"))      return compare_u16;
+    if (!strcmp(type_id, "u32"))      return compare_u32;
+    if (!strcmp(type_id, "u64"))      return compare_u64;
+
+    if (!strcmp(type_id, "hex"))      return compare_hex;
+    if (!strcmp(type_id, "oct"))      return compare_oct;
+    if (!strcmp(type_id, "bin"))      return compare_bin;
+
+    if (!strcmp(type_id, "f32"))      return compare_f32;
+    if (!strcmp(type_id, "f64"))      return compare_f64;
+
+    if (!strcmp(type_id, "bool"))     return compare_bool;
+    if (!strcmp(type_id, "char"))     return compare_char;
+    if (!strcmp(type_id, "cstr"))     return compare_cstr;
+
+    if (!strcmp(type_id, "size"))     return compare_size;
+
+    if (!strcmp(type_id, "datetime")) return compare_datetime;
+    if (!strcmp(type_id, "duration")) return compare_duration;
+
+    return NULL;
+}
+
+// ======================================================
+// Algorithm stubs
+// ======================================================
+
 static void fossil_merge(
-    char *base, size_t left, size_t mid, size_t right, size_t size,
-    fossil_compare_fn cmp, const fossil_sort_options_t *options, char *temp
-)
+    char *base, size_t left, size_t mid, size_t right, size_t type_size, fossil_sort_compare_fn cmp, bool desc)
 {
-    size_t i = left, j = mid, k = left;
-    while (i < mid && j < right) {
-        int res = cmp(base + i * size, base + j * size);
-        if (options && options->order == FOSSIL_SORT_DESCENDING)
-            res = -res;
-        if (res <= 0) {
-            memcpy(temp + k * size, base + i * size, size);
+    size_t n1 = mid - left + 1;
+    size_t n2 = right - mid;
+
+    char *L = malloc(n1 * type_size);
+    char *R = malloc(n2 * type_size);
+
+    if (!L || !R) {
+        free(L); free(R);
+        return;
+    }
+
+    memcpy(L, base + left * type_size, n1 * type_size);
+    memcpy(R, base + (mid + 1) * type_size, n2 * type_size);
+
+    size_t i = 0, j = 0, k = left;
+    while (i < n1 && j < n2) {
+        if (cmp(L + i * type_size, R + j * type_size, desc) <= 0) {
+            memcpy(base + k * type_size, L + i * type_size, type_size);
             i++;
         } else {
-            memcpy(temp + k * size, base + j * size, size);
+            memcpy(base + k * type_size, R + j * type_size, type_size);
             j++;
         }
         k++;
     }
-    while (i < mid) {
-        memcpy(temp + k * size, base + i * size, size);
+    while (i < n1) {
+        memcpy(base + k * type_size, L + i * type_size, type_size);
         i++; k++;
     }
-    while (j < right) {
-        memcpy(temp + k * size, base + j * size, size);
+    while (j < n2) {
+        memcpy(base + k * type_size, R + j * type_size, type_size);
         j++; k++;
     }
-    memcpy(base + left * size, temp + left * size, (right - left) * size);
+    free(L); free(R);
 }
 
-static void fossil_merge_sort_recursive(
-    char *base, size_t left, size_t right, size_t size,
-    fossil_compare_fn cmp, const fossil_sort_options_t *options, char *temp
-)
+static void fossil_merge_sort_rec(
+    char *base, size_t left, size_t right, size_t type_size, fossil_sort_compare_fn cmp, bool desc)
 {
-    if (right - left > 1) {
+    if (left < right) {
         size_t mid = left + (right - left) / 2;
-        fossil_merge_sort_recursive(base, left, mid, size, cmp, options, temp);
-        fossil_merge_sort_recursive(base, mid, right, size, cmp, options, temp);
-        fossil_merge(base, left, mid, right, size, cmp, options, temp);
+        fossil_merge_sort_rec(base, left, mid, type_size, cmp, desc);
+        fossil_merge_sort_rec(base, mid + 1, right, type_size, cmp, desc);
+        fossil_merge(base, left, mid, right, type_size, cmp, desc);
     }
 }
 
-int fossil_algorithm_sort_merge(
-    void *base,
-    size_t count,
-    size_t size,
-    fossil_compare_fn cmp,
-    const fossil_sort_options_t *options
-)
+static int fossil_sort_merge_stub(
+    void *base, size_t count, size_t type_size, fossil_sort_compare_fn cmp, bool desc)
 {
-    if (count <= 1 || !base || !cmp)
-        return 0;
-    char *temp = (char *)malloc(count * size);
-    if (!temp)
-        return -1;
-    fossil_merge_sort_recursive((char *)base, 0, count, size, cmp, options, temp);
-    free(temp);
+    if (!base || count < 2 || !cmp || type_size == 0)
+        return -10;
+    fossil_merge_sort_rec((char *)base, 0, count - 1, type_size, cmp, desc);
     return 0;
 }
 
-/**
- * @brief Sorts using the heap sort algorithm.
- *
- * @param base Pointer to the array to sort.
- * @param count Number of elements.
- * @param size Size of each element.
- * @param cmp Comparison function.
- * @param options Pointer to sorting options.
- * @return int Status code.
- */
 static void fossil_heapify(
-    char *base, size_t count, size_t root, size_t size,
-    fossil_compare_fn cmp, const fossil_sort_options_t *options
-)
+    char *base, size_t count, size_t root, size_t type_size, fossil_sort_compare_fn cmp, bool desc)
 {
     size_t largest = root;
     size_t left = 2 * root + 1;
     size_t right = 2 * root + 2;
 
-    if (left < count) {
-        int res = cmp(base + left * size, base + largest * size);
-        if (options && options->order == FOSSIL_SORT_DESCENDING)
-            res = -res;
-        if (res > 0)
-            largest = left;
-    }
-    if (right < count) {
-        int res = cmp(base + right * size, base + largest * size);
-        if (options && options->order == FOSSIL_SORT_DESCENDING)
-            res = -res;
-        if (res > 0)
-            largest = right;
-    }
+    char *tmp = malloc(type_size);
+    if (!tmp) return;
+
+    if (left < count && cmp(base + left * type_size, base + largest * type_size, desc) > 0)
+        largest = left;
+    if (right < count && cmp(base + right * type_size, base + largest * type_size, desc) > 0)
+        largest = right;
+
     if (largest != root) {
-        fossil_swap_bytes(base + root * size, base + largest * size, size);
-        fossil_heapify(base, count, largest, size, cmp, options);
+        memcpy(tmp, base + root * type_size, type_size);
+        memcpy(base + root * type_size, base + largest * type_size, type_size);
+        memcpy(base + largest * type_size, tmp, type_size);
+
+        fossil_heapify(base, count, largest, type_size, cmp, desc);
     }
+    free(tmp);
 }
 
-int fossil_algorithm_sort_heap(
-    void *base,
-    size_t count,
-    size_t size,
-    fossil_compare_fn cmp,
-    const fossil_sort_options_t *options
-)
+static int fossil_sort_heap_stub(
+    void *base, size_t count, size_t type_size, fossil_sort_compare_fn cmp, bool desc)
 {
-    if (count <= 1 || !base || !cmp)
-        return 0;
+    if (!base || count < 2 || !cmp || type_size == 0)
+        return -11;
 
     char *arr = (char *)base;
 
     // Build heap
     for (long i = (long)count / 2 - 1; i >= 0; --i)
-        fossil_heapify(arr, count, (size_t)i, size, cmp, options);
+        fossil_heapify(arr, count, (size_t)i, type_size, cmp, desc);
+
+    char *tmp = malloc(type_size);
+    if (!tmp) return -11;
 
     // Extract elements from heap
     for (size_t i = count - 1; i > 0; --i) {
-        fossil_swap_bytes(arr, arr + i * size, size);
-        fossil_heapify(arr, i, 0, size, cmp, options);
+        memcpy(tmp, arr, type_size);
+        memcpy(arr, arr + i * type_size, type_size);
+        memcpy(arr + i * type_size, tmp, type_size);
+
+        fossil_heapify(arr, i, 0, type_size, cmp, desc);
     }
+    free(tmp);
     return 0;
 }
 
-/**
- * @brief Sorts using the insertion sort algorithm.
- *
- * @param base Pointer to the array to sort.
- * @param count Number of elements.
- * @param size Size of each element.
- * @param cmp Comparison function.
- * @param options Pointer to sorting options.
- * @return int Status code.
- */
-int fossil_algorithm_sort_insertion(
-    void *base,
-    size_t count,
-    size_t size,
-    fossil_compare_fn cmp,
-    const fossil_sort_options_t *options
-)
+static int fossil_sort_insertion_stub(
+    void *base, size_t count, size_t type_size, fossil_sort_compare_fn cmp, bool desc)
 {
-    if (count <= 1 || !base || !cmp)
-        return 0;
+    if (!base || count < 2 || !cmp || type_size == 0)
+        return -12;
 
     char *arr = (char *)base;
-    char *temp = (char *)malloc(size);
-    if (!temp)
-        return -1;
+    char *tmp = malloc(type_size);
+    if (!tmp) return -12;
 
     for (size_t i = 1; i < count; ++i) {
-        memcpy(temp, arr + i * size, size);
+        memcpy(tmp, arr + i * type_size, type_size);
         size_t j = i;
-        while (j > 0) {
-            int res = cmp(temp, arr + (j - 1) * size);
-            if (options && options->order == FOSSIL_SORT_DESCENDING)
-                res = -res;
-            if (res < 0) {
-                memcpy(arr + j * size, arr + (j - 1) * size, size);
-                --j;
-            } else {
-                break;
-            }
+        while (j > 0 && cmp(arr + (j - 1) * type_size, tmp, desc) > 0) {
+            memcpy(arr + j * type_size, arr + (j - 1) * type_size, type_size);
+            --j;
         }
-        memcpy(arr + j * size, temp, size);
+        memcpy(arr + j * type_size, tmp, type_size);
     }
-    free(temp);
+    free(tmp);
     return 0;
 }
 
-/**
- * @brief Sorts using the shell sort algorithm.
- *
- * @param base Pointer to the array to sort.
- * @param count Number of elements.
- * @param size Size of each element.
- * @param cmp Comparison function.
- * @param options Pointer to sorting options.
- * @return int Status code.
- */
-int fossil_algorithm_sort_shell(
-    void *base,
-    size_t count,
-    size_t size,
-    fossil_compare_fn cmp,
-    const fossil_sort_options_t *options
-)
+// Shell Sort
+static int fossil_sort_shell_stub(
+    void *base, size_t count, size_t type_size, fossil_sort_compare_fn cmp, bool desc)
 {
-    if (count <= 1 || !base || !cmp)
-        return 0;
+    if (!base || count < 2 || !cmp || type_size == 0)
+        return -13;
 
     char *arr = (char *)base;
-    char *temp = (char *)malloc(size);
-    if (!temp)
-        return -1;
+    char *tmp = malloc(type_size);
+    if (!tmp) return -13;
 
-    // Using Shell's original gap sequence: n/2, n/4, ..., 1
     for (size_t gap = count / 2; gap > 0; gap /= 2) {
         for (size_t i = gap; i < count; ++i) {
-            memcpy(temp, arr + i * size, size);
+            memcpy(tmp, arr + i * type_size, type_size);
             size_t j = i;
-            while (j >= gap) {
-                int res = cmp(temp, arr + (j - gap) * size);
-                if (options && options->order == FOSSIL_SORT_DESCENDING)
-                    res = -res;
-                if (res < 0) {
-                    memcpy(arr + j * size, arr + (j - gap) * size, size);
-                    j -= gap;
-                } else {
-                    break;
-                }
+            while (j >= gap && cmp(arr + (j - gap) * type_size, tmp, desc) > 0) {
+                memcpy(arr + j * type_size, arr + (j - gap) * type_size, type_size);
+                j -= gap;
             }
-            memcpy(arr + j * size, temp, size);
+            memcpy(arr + j * type_size, tmp, type_size);
         }
     }
-    free(temp);
+    free(tmp);
     return 0;
 }
 
-/**
- * @brief Sorts using the radix sort algorithm.
- *
- * Only supports sorting arrays of unsigned integers (size == 1, 2, 4, or 8).
- * Ignores the cmp function; sorts in ascending or descending order based on options.
- *
- * @param base Pointer to the array to sort.
- * @param count Number of elements.
- * @param size Size of each element.
- * @param cmp Comparison function (ignored).
- * @param options Pointer to sorting options.
- * @return int Status code.
- */
-int fossil_algorithm_sort_radix(
-    void *base,
-    size_t count,
-    size_t size,
-    fossil_compare_fn cmp,
-    const fossil_sort_options_t *options
-)
+// Bubble Sort
+static int fossil_sort_bubble_stub(
+    void *base, size_t count, size_t type_size, fossil_sort_compare_fn cmp, bool desc)
 {
-    if (count <= 1 || !base)
-        return 0;
+    if (!base || count < 2 || !cmp || type_size == 0)
+        return -14;
 
-    // Only support 1, 2, 4, or 8 byte unsigned types
-    if (size != 1 && size != 2 && size != 4 && size != 8)
-        return -1;
+    char *arr = (char *)base;
+    char *tmp = malloc(type_size);
+    if (!tmp) return -14;
 
-    unsigned char *arr = (unsigned char *)base;
-    unsigned char *temp = (unsigned char *)malloc(count * size);
-    if (!temp)
-        return -1;
-
-    size_t max_bits = size * 8;
-    for (size_t byte = 0; byte < size; ++byte) {
-        size_t count_bucket[256] = {0};
-
-        // Count occurrences
-        for (size_t i = 0; i < count; ++i)
-            count_bucket[arr[i * size + byte]]++;
-
-        // Compute prefix sums
-        size_t pos[256];
-        pos[0] = 0;
-        for (size_t i = 1; i < 256; ++i)
-            pos[i] = pos[i - 1] + count_bucket[i - 1];
-
-        // Sort by current byte
-        for (size_t i = 0; i < count; ++i) {
-            unsigned char val = arr[i * size + byte];
-            memcpy(temp + pos[val] * size, arr + i * size, size);
-            pos[val]++;
-        }
-
-        // Copy back
-        memcpy(arr, temp, count * size);
-    }
-
-    // If descending order requested, reverse array
-    if (options && options->order == FOSSIL_SORT_DESCENDING) {
-        for (size_t i = 0; i < count / 2; ++i) {
-            fossil_swap_bytes((char *)arr + i * size, (char *)arr + (count - 1 - i) * size, size);
+    for (size_t i = 0; i < count - 1; ++i) {
+        for (size_t j = 0; j < count - i - 1; ++j) {
+            if (cmp(arr + j * type_size, arr + (j + 1) * type_size, desc) > 0) {
+                memcpy(tmp, arr + j * type_size, type_size);
+                memcpy(arr + j * type_size, arr + (j + 1) * type_size, type_size);
+                memcpy(arr + (j + 1) * type_size, tmp, type_size);
+            }
         }
     }
-
-    free(temp);
+    free(tmp);
     return 0;
 }
 
-/**
- * @brief Sorts using the counting sort algorithm.
- *
- * Only supports arrays of unsigned integers (size == 1, 2, or 4).
- * Ignores the cmp function; sorts in ascending or descending order based on options.
- *
- * @param base Pointer to the array to sort.
- * @param count Number of elements.
- * @param size Size of each element.
- * @param cmp Comparison function (ignored).
- * @param options Pointer to sorting options.
- * @return int Status code.
- */
-int fossil_algorithm_sort_counting(
-    void *base,
-    size_t count,
-    size_t size,
-    fossil_compare_fn cmp,
-    const fossil_sort_options_t *options
-)
+// Counting Sort (only for integer types)
+static int fossil_sort_counting_stub(
+    void *base, size_t count, size_t type_size, fossil_sort_compare_fn cmp, bool desc)
 {
-    if (count <= 1 || !base)
-        return 0;
+    // Only supports u8 for simplicity
+    if (!base || count < 2 || !cmp || type_size != sizeof(uint8_t))
+        return -15;
 
-    // Only support 1, 2, or 4 byte unsigned types
-    if (size != 1 && size != 2 && size != 4)
-        return -1;
-
-    size_t max_value = 0;
-    size_t i;
-
-    // Find max value
-    if (size == 1) {
-        unsigned char *arr = (unsigned char *)base;
-        for (i = 0; i < count; ++i)
-            if (arr[i] > max_value) max_value = arr[i];
-    } else if (size == 2) {
-        unsigned short *arr = (unsigned short *)base;
-        for (i = 0; i < count; ++i)
-            if (arr[i] > max_value) max_value = arr[i];
-    } else if (size == 4) {
-        unsigned int *arr = (unsigned int *)base;
-        for (i = 0; i < count; ++i)
-            if (arr[i] > max_value) max_value = arr[i];
+    uint8_t *arr = (uint8_t *)base;
+    uint8_t max = arr[0], min = arr[0];
+    for (size_t i = 1; i < count; ++i) {
+        if (arr[i] > max) max = arr[i];
+        if (arr[i] < min) min = arr[i];
     }
+    size_t range = max - min + 1;
+    size_t *count_arr = calloc(range, sizeof(size_t));
+    if (!count_arr) return -15;
 
-    size_t *count_arr = (size_t *)calloc(max_value + 1, sizeof(size_t));
-    if (!count_arr)
-        return -1;
+    for (size_t i = 0; i < count; ++i)
+        count_arr[arr[i] - min]++;
 
-    // Count occurrences
-    if (size == 1) {
-        unsigned char *arr = (unsigned char *)base;
-        for (i = 0; i < count; ++i)
-            count_arr[arr[i]]++;
-    } else if (size == 2) {
-        unsigned short *arr = (unsigned short *)base;
-        for (i = 0; i < count; ++i)
-            count_arr[arr[i]]++;
-    } else if (size == 4) {
-        unsigned int *arr = (unsigned int *)base;
-        for (i = 0; i < count; ++i)
-            count_arr[arr[i]]++;
-    }
-
-    // Write sorted output
-    size_t idx = 0;
-    if (!options || options->order == FOSSIL_SORT_ASCENDING) {
-        for (size_t val = 0; val <= max_value; ++val) {
-            while (count_arr[val]--) {
-                if (size == 1)
-                    ((unsigned char *)base)[idx++] = (unsigned char)val;
-                else if (size == 2)
-                    ((unsigned short *)base)[idx++] = (unsigned short)val;
-                else if (size == 4)
-                    ((unsigned int *)base)[idx++] = (unsigned int)val;
-            }
-        }
+    if (!desc) {
+        size_t idx = 0;
+        for (size_t i = 0; i < range; ++i)
+            for (size_t j = 0; j < count_arr[i]; ++j)
+                arr[idx++] = (uint8_t)(i + min);
     } else {
-        for (long val = (long)max_value; val >= 0; --val) {
-            while (count_arr[val]--) {
-                if (size == 1)
-                    ((unsigned char *)base)[idx++] = (unsigned char)val;
-                else if (size == 2)
-                    ((unsigned short *)base)[idx++] = (unsigned short)val;
-                else if (size == 4)
-                    ((unsigned int *)base)[idx++] = (unsigned int)val;
-            }
-        }
+        size_t idx = 0;
+        for (size_t i = range; i-- > 0;)
+            for (size_t j = 0; j < count_arr[i]; ++j)
+                arr[idx++] = (uint8_t)(i + min);
     }
-
     free(count_arr);
     return 0;
 }
 
-/**
- * @brief Sorts using the bubble sort algorithm (for educational/testing use).
- *
- * @param base Pointer to the array to sort.
- * @param count Number of elements.
- * @param size Size of each element.
- * @param cmp Comparison function.
- * @param options Pointer to sorting options.
- * @return int Status code.
- */
-int fossil_algorithm_sort_bubble(
-    void *base,
-    size_t count,
-    size_t size,
-    fossil_compare_fn cmp,
-    const fossil_sort_options_t *options
-)
+// Radix Sort (only for u32)
+static int fossil_sort_radix_stub(
+    void *base, size_t count, size_t type_size, fossil_sort_compare_fn cmp, bool desc)
 {
-    if (count <= 1 || !base || !cmp)
-        return 0;
+    if (!base || count < 2 || !cmp || type_size != sizeof(uint32_t))
+        return -16;
 
-    char *arr = (char *)base;
-    int swapped;
-    for (size_t i = 0; i < count - 1; ++i) {
-        swapped = 0;
-        for (size_t j = 0; j < count - i - 1; ++j) {
-            int res = cmp(arr + j * size, arr + (j + 1) * size);
-            if (options && options->order == FOSSIL_SORT_DESCENDING)
-                res = -res;
-            if (res > 0) {
-                fossil_swap_bytes(arr + j * size, arr + (j + 1) * size, size);
-                swapped = 1;
-            }
+    uint32_t *arr = (uint32_t *)base;
+    uint32_t max = arr[0];
+    for (size_t i = 1; i < count; ++i)
+        if (arr[i] > max) max = arr[i];
+
+    uint32_t *output = malloc(count * sizeof(uint32_t));
+    if (!output) return -16;
+
+    for (uint32_t exp = 1; max / exp > 0; exp *= 10) {
+        size_t bucket[10] = {0};
+        for (size_t i = 0; i < count; ++i)
+            bucket[(arr[i] / exp) % 10]++;
+        for (size_t i = 1; i < 10; ++i)
+            bucket[i] += bucket[i - 1];
+        for (size_t i = count; i-- > 0;) {
+            size_t idx = (arr[i] / exp) % 10;
+            output[--bucket[idx]] = arr[i];
         }
-        if (!swapped)
-            break;
+        memcpy(arr, output, count * sizeof(uint32_t));
     }
+    if (desc) {
+        for (size_t i = 0; i < count / 2; ++i) {
+            uint32_t tmp = arr[i];
+            arr[i] = arr[count - i - 1];
+            arr[count - i - 1] = tmp;
+        }
+    }
+    free(output);
     return 0;
 }
 
-/**
- * @def FOSSIL_SORT_DEFAULT_OPTIONS
- * @brief Macro for default sorting options (ascending, unstable).
- */
-#define FOSSIL_SORT_DEFAULT_OPTIONS \
-    ((fossil_sort_options_t){ FOSSIL_SORT_ASCENDING, FOSSIL_SORT_UNSTABLE })
+// ======================================================
+// Algorithm dispatch (only qsort for now, stubs for others)
+// ======================================================
+
+int fossil_algorithm_sort_exec(
+    void *base,
+    size_t count,
+    const char *type_id,
+    const char *algorithm_id,
+    const char *order_id)
+{
+    if (!base || count == 0 || !type_id)
+        return -1; // invalid input
+
+    bool desc = false;
+    if (order_id && strcmp(order_id, "desc") == 0)
+        desc = true;
+
+    size_t type_size = fossil_algorithm_sort_type_sizeof(type_id);
+    if (type_size == 0)
+        return -2; // unknown type
+
+    fossil_sort_compare_fn cmp = fossil_sort_select_comparator(type_id);
+    if (!cmp)
+        return -2;
+
+    // Dispatch to algorithm
+    if (!algorithm_id || !strcmp(algorithm_id, "auto") ||
+        !strcmp(algorithm_id, "quick"))
+    {
+        // Use qsort_r or fallback to qsort depending on platform
+        #if defined(__GLIBC__) && !defined(__APPLE__)
+        qsort_r(base, count, type_size, (int (*)(const void *, const void *, void *))cmp, &desc);
+        #else
+        // Portable fallback using static context (not thread-safe)
+        static bool s_desc = false;
+        s_desc = desc;
+        qsort(base, count, type_size, (int (*)(const void *, const void *))(
+            ^(const void *a, const void *b){
+                return cmp(a, b, s_desc);
+            }));
+        #endif
+        return 0;
+    }
+    else if (!strcmp(algorithm_id, "merge")) {
+        return fossil_sort_merge_stub(base, count, type_size, cmp, desc);
+    }
+    else if (!strcmp(algorithm_id, "heap")) {
+        return fossil_sort_heap_stub(base, count, type_size, cmp, desc);
+    }
+    else if (!strcmp(algorithm_id, "insertion")) {
+        return fossil_sort_insertion_stub(base, count, type_size, cmp, desc);
+    }
+    else if (!strcmp(algorithm_id, "shell")) {
+        return fossil_sort_shell_stub(base, count, type_size, cmp, desc);
+    }
+    else if (!strcmp(algorithm_id, "bubble")) {
+        return fossil_sort_bubble_stub(base, count, type_size, cmp, desc);
+    }
+    else if (!strcmp(algorithm_id, "counting")) {
+        return fossil_sort_counting_stub(base, count, type_size, cmp, desc);
+    }
+    else if (!strcmp(algorithm_id, "radix")) {
+        return fossil_sort_radix_stub(base, count, type_size, cmp, desc);
+    }
+
+    return -3; // unknown algorithm
+}
