@@ -42,28 +42,39 @@ extern "C" {
 /**
  * @brief Executes a sorting operation using string-based configuration.
  *
- * Provides a flexible runtime interface to sort arrays of various types
- * using algorithm, order, and type specified by string identifiers.
+ * This function provides a flexible runtime interface for sorting arrays of
+ * various types, using the algorithm, order, and type specified by string
+ * identifiers. It supports multiple algorithms (merge, heap, insertion, shell,
+ * bubble, counting, radix) and both ascending and descending order.
  *
- * This allows dynamic sorting logic for scripting layers, configuration
- * systems, or user-driven data processing.
+ * Internally, the function dispatches to the appropriate algorithm stub based
+ * on the algorithm_id string. Type safety is managed via type_id and a
+ * comparator function. For unsupported types or algorithms, error codes are
+ * returned.
+ *
+ * Notes:
+ *   - "auto" algorithm_id defaults to merge sort.
+ *   - Counting sort only supports "u8" type; radix sort only supports "u32".
+ *   - Returns negative error codes for invalid input, unknown type, or unknown algorithm.
+ *   - Sorting is performed in-place.
  *
  * Example:
  * @code
  * float values[] = { 3.2f, 1.5f, 9.1f };
- * fossil_algorithm_sort_exec(values, 3, "f32", "quick", "asc");
+ * fossil_algorithm_sort_exec(values, 3, "f32", "merge", "asc");
  * @endcode
  *
  * @param base Pointer to the array to sort.
  * @param count Number of elements in the array.
  * @param type_id String identifier for data type (e.g., "i32", "f64", "cstr").
- * @param algorithm_id String identifier for sorting algorithm ("auto", "quick", "merge", etc.).
+ * @param algorithm_id String identifier for sorting algorithm ("auto", "merge", etc.).
  * @param order_id String identifier for sort order ("asc", "desc").
  * @return int Status code:
  *   - `0` on success
  *   - `-1` for invalid input
- *   - `-2` for unknown type
+ *   - `-2` for unknown type or comparator
  *   - `-3` for unknown algorithm
+ *   - Other negative values for algorithm-specific errors
  */
 int fossil_algorithm_sort_exec(
     void *base,
