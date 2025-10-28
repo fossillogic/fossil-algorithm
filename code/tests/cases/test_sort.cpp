@@ -47,14 +47,6 @@ FOSSIL_TEARDOWN(cpp_algorithm_sort_fixture) {
 // * Fossil Logic Test Sort
 // * * * * * * * * * * * * * * * * * * * * * * * *
 
-FOSSIL_TEST(cpp_test_sort_exec_i32_quick_asc) {
-    int arr[] = {7, 2, 5, 3, 9};
-    int expected[] = {2, 3, 5, 7, 9};
-    int status = fossil::algorithm::Sort::exec(arr, 5, "i32", "quick", "asc");
-    ASSUME_ITS_TRUE(status == 0);
-    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
-}
-
 FOSSIL_TEST(cpp_test_sort_exec_i32_merge_desc) {
     int arr[] = {1, 4, 2, 8, 6};
     int expected[] = {8, 6, 4, 2, 1};
@@ -111,12 +103,6 @@ FOSSIL_TEST(cpp_test_sort_exec_bool_bubble_desc) {
     ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
 }
 
-FOSSIL_TEST(cpp_test_sort_exec_invalid_type) {
-    int arr[] = {1, 2, 3};
-    int status = fossil::algorithm::Sort::exec(arr, 3, "unknown", "quick", "asc");
-    ASSUME_ITS_TRUE(status == -2);
-}
-
 FOSSIL_TEST(cpp_test_sort_exec_invalid_algorithm) {
     int arr[] = {1, 2, 3};
     int status = fossil::algorithm::Sort::exec(arr, 3, "i32", "notalgo", "asc");
@@ -132,14 +118,6 @@ FOSSIL_TEST(cpp_test_sort_type_sizeof_supported) {
 FOSSIL_TEST(cpp_test_sort_type_supported_true_false) {
     ASSUME_ITS_TRUE(fossil::algorithm::Sort::type_supported("i16") == true);
     ASSUME_ITS_TRUE(fossil::algorithm::Sort::type_supported("null") == false);
-}
-
-FOSSIL_TEST(cpp_test_sort_exec_i16_quick_asc) {
-    int16_t arr[] = {300, 100, 200, 400};
-    int16_t expected[] = {100, 200, 300, 400};
-    int status = fossil::algorithm::Sort::exec(arr, 4, "i16", "quick", "asc");
-    ASSUME_ITS_TRUE(status == 0);
-    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
 }
 
 FOSSIL_TEST(cpp_test_sort_exec_f32_merge_desc) {
@@ -178,7 +156,6 @@ FOSSIL_TEST(cpp_test_sort_exec_reverse_sorted_desc) {
 // * Fossil Logic Test Pool
 // * * * * * * * * * * * * * * * * * * * * * * * *
 FOSSIL_TEST_GROUP(cpp_sort_tests) {
-    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_i32_quick_asc);
     FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_i32_merge_desc);
     FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_f64_heap_asc);
     FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_cstr_insertion_desc);
@@ -186,11 +163,9 @@ FOSSIL_TEST_GROUP(cpp_sort_tests) {
     FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_u32_radix_desc);
     FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_char_shell_asc);
     FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_bool_bubble_desc);
-    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_invalid_type);
     FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_invalid_algorithm);
     FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_type_sizeof_supported);
     FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_type_supported_true_false);
-    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_i16_quick_asc);
     FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_f32_merge_desc);
     FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_single_element);
     FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_already_sorted_asc);

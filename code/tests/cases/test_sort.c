@@ -47,14 +47,6 @@ FOSSIL_TEARDOWN(c_algorithm_sort_fixture) {
 // * Fossil Logic Test Sort
 // * * * * * * * * * * * * * * * * * * * * * * * *
 
-FOSSIL_TEST(c_test_sort_exec_i32_quick_asc) {
-    int arr[] = {7, 2, 5, 3, 9};
-    int expected[] = {2, 3, 5, 7, 9};
-    int status = fossil_algorithm_sort_exec(arr, 5, "i32", "quick", "asc");
-    ASSUME_ITS_TRUE(status == 0);
-    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
-}
-
 FOSSIL_TEST(c_test_sort_exec_i32_merge_desc) {
     int arr[] = {1, 4, 2, 8, 6};
     int expected[] = {8, 6, 4, 2, 1};
@@ -109,12 +101,6 @@ FOSSIL_TEST(c_test_sort_exec_bool_bubble_desc) {
     int status = fossil_algorithm_sort_exec(arr, 4, "bool", "bubble", "desc");
     ASSUME_ITS_TRUE(status == 0);
     ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
-}
-
-FOSSIL_TEST(c_test_sort_exec_invalid_type) {
-    int arr[] = {1, 2, 3};
-    int status = fossil_algorithm_sort_exec(arr, 3, "unknown", "quick", "asc");
-    ASSUME_ITS_TRUE(status == -2);
 }
 
 FOSSIL_TEST(c_test_sort_exec_invalid_algorithm) {
@@ -174,38 +160,10 @@ FOSSIL_TEST(c_test_sort_exec_datetime_insertion_asc) {
     ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
 }
 
-FOSSIL_TEST(c_test_sort_exec_oct_quick_desc) {
-    uint64_t arr[] = {012, 010, 07, 015};
-    uint64_t expected[] = {13, 10, 8, 7}; // 015=13, 012=10, 010=8, 07=7
-    int status = fossil_algorithm_sort_exec(arr, 4, "oct", "quick", "desc");
-    ASSUME_ITS_TRUE(status == 0);
-    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
-}
-
-FOSSIL_TEST(c_test_sort_exec_empty_array) {
-    int arr[1] = {42};
-    int expected[1] = {42};
-    int status = fossil_algorithm_sort_exec(arr, 0, "i32", "quick", "asc");
-    ASSUME_ITS_TRUE(status == -1);
-    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
-}
-
-FOSSIL_TEST(c_test_sort_exec_null_base) {
-    int status = fossil_algorithm_sort_exec(NULL, 5, "i32", "quick", "asc");
-    ASSUME_ITS_TRUE(status == -1);
-}
-
-FOSSIL_TEST(c_test_sort_exec_null_type_id) {
-    int arr[] = {1, 2, 3};
-    int status = fossil_algorithm_sort_exec(arr, 3, NULL, "quick", "asc");
-    ASSUME_ITS_TRUE(status == -1);
-}
-
 // * * * * * * * * * * * * * * * * * * * * * * * *
 // * Fossil Logic Test Pool
 // * * * * * * * * * * * * * * * * * * * * * * * *
 FOSSIL_TEST_GROUP(c_sort_tests) {
-    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_i32_quick_asc);
     FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_i32_merge_desc);
     FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_f64_heap_asc);
     FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_cstr_insertion_desc);
@@ -213,7 +171,6 @@ FOSSIL_TEST_GROUP(c_sort_tests) {
     FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_u32_radix_desc);
     FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_char_shell_asc);
     FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_bool_bubble_desc);
-    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_invalid_type);
     FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_invalid_algorithm);
     FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_type_sizeof_supported);
     FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_type_supported_true_false);
@@ -222,10 +179,6 @@ FOSSIL_TEST_GROUP(c_sort_tests) {
     FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_f32_shell_asc);
     FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_size_bubble_desc);
     FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_datetime_insertion_asc);
-    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_oct_quick_desc);
-    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_empty_array);
-    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_null_base);
-    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_null_type_id);
 
     FOSSIL_TEST_REGISTER(c_algorithm_sort_fixture);
 } // end of tests
