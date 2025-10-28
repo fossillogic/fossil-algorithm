@@ -543,6 +543,36 @@ static int fossil_sort_radix_stub(
     return 0;
 }
 
+// qsort stub (portable, uses context for desc)
+static int fossil_sort_qsort_adapter(const void *a, const void *b, void *ctx) {
+    fossil_sort_compare_fn cmp = ((struct { fossil_sort_compare_fn cmp; bool desc; } *)ctx)->cmp;
+    bool desc = ((struct { fossil_sort_compare_fn cmp; bool desc; } *)ctx)->desc;
+    return cmp(a, b, desc);
+}
+
+static int fossil_sort_qsort_stub(
+    void *base, size_t count, size_t type_size, fossil_sort_compare_fn cmp, bool desc)
+{
+    if (!base || count < 2 || !cmp || type_size == 0)
+        return -17;
+
+#if defined(__GLIBC__) && !defined(__APPLE__)
+    struct { fossil_sort_compare_fn cmp; bool desc; } ctx = { cmp, desc };
+    qsort_r(base, count, type_size, fossil_sort_qsort_adapter, &ctx);
+#else
+    // Fallback: not thread-safe, uses static context
+    static fossil_sort_compare_fn static_cmp;
+    static bool static_desc;
+    static_cmp = cmp;
+    static_desc = desc;
+    int adapter(const void *a, const void *b) {
+        return static_cmp(a, b, static_desc);
+    }
+    qsort(base, count, type_size, adapter);
+#endif
+    return 0;
+}
+
 // ======================================================
 // Algorithm dispatch (only qsort for now, stubs for others)
 // ======================================================
@@ -573,24 +603,7 @@ int fossil_algorithm_sort_exec(
     if (!algorithm_id || !strcmp(algorithm_id, "auto") ||
         !strcmp(algorithm_id, "quick"))
     {
-        // Use qsort_r or fallback to qsort depending on platform
-        #if defined(__GLIBC__) && !defined(__APPLE__)
-        qsort_r(base, count, type_size, (int (*)(const void *, const void *, void *))cmp, &desc);
-        #else
-        // Portable fallback using static context (not thread-safe)
-        struct {
-            fossil_sort_compare_fn cmp;
-            bool desc;
-        } context = { cmp, desc };
-
-        int fossil_sort_qsort_adapter(const void *a, const void *b) {
-            // 'context' is static for this call, but not thread-safe
-            return cmp(a, b, desc);
-        }
-
-        qsort(base, count, type_size, fossil_sort_qsort_adapter);
-        #endif
-        return 0;
+        return fossil_sort_qsort_stub(base, count, type_size, cmp, desc);
     }
     else if (!strcmp(algorithm_id, "merge")) {
         return fossil_sort_merge_stub(base, count, type_size, cmp, desc);
