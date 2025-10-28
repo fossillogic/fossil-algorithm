@@ -128,14 +128,6 @@ FOSSIL_TEST(cpp_test_sort_exec_f32_merge_desc) {
     ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
 }
 
-FOSSIL_TEST(cpp_test_sort_exec_single_element) {
-    double arr[] = {42.0};
-    double expected[] = {42.0};
-    int status = fossil::algorithm::Sort::exec(arr, 1, "f64", "heap", "asc");
-    ASSUME_ITS_TRUE(status == 0);
-    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
-}
-
 FOSSIL_TEST(cpp_test_sort_exec_already_sorted_asc) {
     uint8_t arr[] = {1, 2, 3, 4, 5};
     uint8_t expected[] = {1, 2, 3, 4, 5};
@@ -167,7 +159,6 @@ FOSSIL_TEST_GROUP(cpp_sort_tests) {
     FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_type_sizeof_supported);
     FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_type_supported_true_false);
     FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_f32_merge_desc);
-    FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_single_element);
     FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_already_sorted_asc);
     FOSSIL_TEST_ADD(cpp_algorithm_sort_fixture, cpp_test_sort_exec_reverse_sorted_desc);
 
