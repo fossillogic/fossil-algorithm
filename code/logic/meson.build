@@ -8,7 +8,8 @@ dep = [
 
 fossil_algorithm_lib = library('fossil_algorithm',
     files(
-        'sort.c'
+        'sort.c',
+        'search.c',
         ),
     install: true,
     dependencies: dep,
