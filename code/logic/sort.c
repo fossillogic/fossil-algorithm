@@ -56,7 +56,6 @@
  * | Algorithm | Description |
  * |------------|----------------------------|
  * | "auto"     | Automatically selects the best algorithm |
- * | "quick"    | Quicksort (default for large arrays)     |
  * | "merge"    | Stable merge sort                        |
  * | "heap"     | Heap sort (memory-efficient)              |
  * | "insertion"| Simple insertion sort (small arrays)      |
@@ -66,7 +65,7 @@
  * | "bubble"   | Bubble sort (testing/educational only)    |
  */
 #define FOSSIL_SORT_SUPPORTED_ALGO_IDS \
-    "auto, quick, merge, heap, insertion, shell, radix, counting, bubble"
+    "auto, merge, heap, insertion, shell, radix, counting, bubble"
 
 /**
  * @brief Supported order identifiers for @ref fossil_algorithm_sort_exec.
@@ -543,40 +542,8 @@ static int fossil_sort_radix_stub(
     return 0;
 }
 
-// qsort stub (portable, uses context for desc)
-static int fossil_sort_qsort_adapter(const void *a, const void *b, void *ctx) __attribute__((unused));
-static int fossil_sort_qsort_adapter(const void *a, const void *b, void *ctx) {
-    fossil_sort_compare_fn cmp = ((struct { fossil_sort_compare_fn cmp; bool desc; } *)ctx)->cmp;
-    bool desc = ((struct { fossil_sort_compare_fn cmp; bool desc; } *)ctx)->desc;
-    return cmp(a, b, desc);
-}
-
-// Fallback: not thread-safe, uses static context
-static fossil_sort_compare_fn static_cmp;
-static bool static_desc;
-static int fossil_sort_qsort_adapter_fallback(const void *a, const void *b) {
-    return static_cmp(a, b, static_desc);
-}
-
-static int fossil_sort_qsort_stub(
-    void *base, size_t count, size_t type_size, fossil_sort_compare_fn cmp, bool desc)
-{
-    if (!base || count < 2 || !cmp || type_size == 0)
-        return -17;
-
-#if defined(__GLIBC__) && !defined(__APPLE__)
-    struct { fossil_sort_compare_fn cmp; bool desc; } ctx = { cmp, desc };
-    qsort_r(base, count, type_size, fossil_sort_qsort_adapter, &ctx);
-#else
-    static_cmp = cmp;
-    static_desc = desc;
-    qsort(base, count, type_size, fossil_sort_qsort_adapter_fallback);
-#endif
-    return 0;
-}
-
 // ======================================================
-// Algorithm dispatch (only qsort for now, stubs for others)
+// Algorithm dispatch (all algorithms implemented as stubs)
 // ======================================================
 
 int fossil_algorithm_sort_exec(
@@ -602,10 +569,9 @@ int fossil_algorithm_sort_exec(
         return -2;
 
     // Dispatch to algorithm
-    if (!algorithm_id || !strcmp(algorithm_id, "auto") ||
-        !strcmp(algorithm_id, "quick"))
+    if (!algorithm_id || !strcmp(algorithm_id, "auto"))
     {
-        return fossil_sort_qsort_stub(base, count, type_size, cmp, desc);
+        return fossil_sort_merge_stub(base, count, type_size, cmp, desc);
     }
     else if (!strcmp(algorithm_id, "merge")) {
         return fossil_sort_merge_stub(base, count, type_size, cmp, desc);
