@@ -550,6 +550,13 @@ static int fossil_sort_qsort_adapter(const void *a, const void *b, void *ctx) {
     return cmp(a, b, desc);
 }
 
+// Fallback: not thread-safe, uses static context
+static fossil_sort_compare_fn static_cmp;
+static bool static_desc;
+static int fossil_sort_qsort_adapter_fallback(const void *a, const void *b) {
+    return static_cmp(a, b, static_desc);
+}
+
 static int fossil_sort_qsort_stub(
     void *base, size_t count, size_t type_size, fossil_sort_compare_fn cmp, bool desc)
 {
@@ -560,15 +567,9 @@ static int fossil_sort_qsort_stub(
     struct { fossil_sort_compare_fn cmp; bool desc; } ctx = { cmp, desc };
     qsort_r(base, count, type_size, fossil_sort_qsort_adapter, &ctx);
 #else
-    // Fallback: not thread-safe, uses static context
-    static fossil_sort_compare_fn static_cmp;
-    static bool static_desc;
     static_cmp = cmp;
     static_desc = desc;
-    int adapter(const void *a, const void *b) {
-        return static_cmp(a, b, static_desc);
-    }
-    qsort(base, count, type_size, adapter);
+    qsort(base, count, type_size, fossil_sort_qsort_adapter_fallback);
 #endif
     return 0;
 }
