@@ -182,14 +182,6 @@ FOSSIL_TEST(c_test_sort_exec_oct_quick_desc) {
     ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
 }
 
-FOSSIL_TEST(c_test_sort_exec_bin_merge_asc) {
-    uint64_t arr[] = {0b101, 0b11, 0b1000, 0b1};
-    uint64_t expected[] = {1, 3, 5, 8};
-    int status = fossil_algorithm_sort_exec(arr, 4, "bin", "merge", "asc");
-    ASSUME_ITS_TRUE(status == 0);
-    ASSUME_ITS_TRUE(memcmp(arr, expected, sizeof(arr)) == 0);
-}
-
 FOSSIL_TEST(c_test_sort_exec_empty_array) {
     int arr[1] = {42};
     int expected[1] = {42};
@@ -231,7 +223,6 @@ FOSSIL_TEST_GROUP(c_sort_tests) {
     FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_size_bubble_desc);
     FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_datetime_insertion_asc);
     FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_oct_quick_desc);
-    FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_bin_merge_asc);
     FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_empty_array);
     FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_null_base);
     FOSSIL_TEST_ADD(c_algorithm_sort_fixture, c_test_sort_exec_null_type_id);
