@@ -578,12 +578,17 @@ int fossil_algorithm_sort_exec(
         qsort_r(base, count, type_size, (int (*)(const void *, const void *, void *))cmp, &desc);
         #else
         // Portable fallback using static context (not thread-safe)
-        static bool s_desc = false;
-        s_desc = desc;
-        qsort(base, count, type_size, (int (*)(const void *, const void *))(
-            ^(const void *a, const void *b){
-                return cmp(a, b, s_desc);
-            }));
+        struct {
+            fossil_sort_compare_fn cmp;
+            bool desc;
+        } context = { cmp, desc };
+
+        int fossil_sort_qsort_adapter(const void *a, const void *b) {
+            // 'context' is static for this call, but not thread-safe
+            return cmp(a, b, desc);
+        }
+
+        qsort(base, count, type_size, fossil_sort_qsort_adapter);
         #endif
         return 0;
     }
