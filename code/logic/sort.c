@@ -544,6 +544,7 @@ static int fossil_sort_radix_stub(
 }
 
 // qsort stub (portable, uses context for desc)
+static int fossil_sort_qsort_adapter(const void *a, const void *b, void *ctx) __attribute__((unused));
 static int fossil_sort_qsort_adapter(const void *a, const void *b, void *ctx) {
     fossil_sort_compare_fn cmp = ((struct { fossil_sort_compare_fn cmp; bool desc; } *)ctx)->cmp;
     bool desc = ((struct { fossil_sort_compare_fn cmp; bool desc; } *)ctx)->desc;
