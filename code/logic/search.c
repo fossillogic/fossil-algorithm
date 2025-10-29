@@ -317,14 +317,14 @@ static int search_interpolation(
     const void *base, size_t count, const void *key,
     size_t size, fossil_search_compare_fn cmp, bool desc)
 {
-    // Only works for uniformly distributed sorted integer arrays
-    // Enhanced: supports both ascending/descending, int32_t/int64_t, and uses comparator
+    // Only works for uniformly distributed sorted numeric arrays
     if (count == 0 || !base || !key) return -2;
+
+    size_t low = 0, high = count - 1;
+
     if (size == sizeof(int32_t)) {
         const int32_t *arr = (const int32_t *)base;
         int32_t k = *(const int32_t *)key;
-        size_t low = 0, high = count - 1;
-
         while (low <= high &&
                ((desc && k <= arr[low] && k >= arr[high]) ||
                 (!desc && k >= arr[low] && k <= arr[high]))) {
@@ -345,8 +345,86 @@ static int search_interpolation(
     } else if (size == sizeof(int64_t)) {
         const int64_t *arr = (const int64_t *)base;
         int64_t k = *(const int64_t *)key;
-        size_t low = 0, high = count - 1;
-
+        while (low <= high &&
+               ((desc && k <= arr[low] && k >= arr[high]) ||
+                (!desc && k >= arr[low] && k <= arr[high]))) {
+            if (arr[high] == arr[low]) {
+                if (cmp(&arr[low], &k, desc) == 0) return (int)low;
+                break;
+            }
+            size_t pos = low + (size_t)(((double)(high - low) * (k - arr[low])) / (arr[high] - arr[low]));
+            if (pos < low || pos > high) break;
+            if (cmp(&arr[pos], &k, desc) == 0)
+                return (int)pos;
+            if ((desc && arr[pos] < k) || (!desc && arr[pos] > k))
+                high = pos - 1;
+            else
+                low = pos + 1;
+        }
+        return -1;
+    } else if (size == sizeof(uint32_t)) {
+        const uint32_t *arr = (const uint32_t *)base;
+        uint32_t k = *(const uint32_t *)key;
+        while (low <= high &&
+               ((desc && k <= arr[low] && k >= arr[high]) ||
+                (!desc && k >= arr[low] && k <= arr[high]))) {
+            if (arr[high] == arr[low]) {
+                if (cmp(&arr[low], &k, desc) == 0) return (int)low;
+                break;
+            }
+            size_t pos = low + (size_t)(((double)(high - low) * (k - arr[low])) / (arr[high] - arr[low]));
+            if (pos < low || pos > high) break;
+            if (cmp(&arr[pos], &k, desc) == 0)
+                return (int)pos;
+            if ((desc && arr[pos] < k) || (!desc && arr[pos] > k))
+                high = pos - 1;
+            else
+                low = pos + 1;
+        }
+        return -1;
+    } else if (size == sizeof(uint64_t)) {
+        const uint64_t *arr = (const uint64_t *)base;
+        uint64_t k = *(const uint64_t *)key;
+        while (low <= high &&
+               ((desc && k <= arr[low] && k >= arr[high]) ||
+                (!desc && k >= arr[low] && k <= arr[high]))) {
+            if (arr[high] == arr[low]) {
+                if (cmp(&arr[low], &k, desc) == 0) return (int)low;
+                break;
+            }
+            size_t pos = low + (size_t)(((double)(high - low) * (k - arr[low])) / (arr[high] - arr[low]));
+            if (pos < low || pos > high) break;
+            if (cmp(&arr[pos], &k, desc) == 0)
+                return (int)pos;
+            if ((desc && arr[pos] < k) || (!desc && arr[pos] > k))
+                high = pos - 1;
+            else
+                low = pos + 1;
+        }
+        return -1;
+    } else if (size == sizeof(float)) {
+        const float *arr = (const float *)base;
+        float k = *(const float *)key;
+        while (low <= high &&
+               ((desc && k <= arr[low] && k >= arr[high]) ||
+                (!desc && k >= arr[low] && k <= arr[high]))) {
+            if (arr[high] == arr[low]) {
+                if (cmp(&arr[low], &k, desc) == 0) return (int)low;
+                break;
+            }
+            size_t pos = low + (size_t)(((double)(high - low) * (k - arr[low])) / (arr[high] - arr[low]));
+            if (pos < low || pos > high) break;
+            if (cmp(&arr[pos], &k, desc) == 0)
+                return (int)pos;
+            if ((desc && arr[pos] < k) || (!desc && arr[pos] > k))
+                high = pos - 1;
+            else
+                low = pos + 1;
+        }
+        return -1;
+    } else if (size == sizeof(double)) {
+        const double *arr = (const double *)base;
+        double k = *(const double *)key;
         while (low <= high &&
                ((desc && k <= arr[low] && k >= arr[high]) ||
                 (!desc && k >= arr[low] && k <= arr[high]))) {
