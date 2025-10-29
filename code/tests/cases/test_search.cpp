@@ -50,136 +50,136 @@ FOSSIL_TEARDOWN(cpp_algorithm_search_fixture) {
 FOSSIL_TEST(cpp_test_search_exec_linear_i32_found) {
     int arr[] = {5, 2, 9, 1, 7};
     int key = 9;
-    int idx = fossil_algorithm_search_exec(arr, 5, &key, "i32", "linear", "asc");
+    int idx = fossil::algorithm::Search::exec(arr, 5, &key, "i32", "linear", "asc");
     ASSUME_ITS_EQUAL_I32(idx, 2);
 }
 
 FOSSIL_TEST(cpp_test_search_exec_linear_i32_not_found) {
     int arr[] = {5, 2, 9, 1, 7};
     int key = 3;
-    int idx = fossil_algorithm_search_exec(arr, 5, &key, "i32", "linear", "asc");
+    int idx = fossil::algorithm::Search::exec(arr, 5, &key, "i32", "linear", "asc");
     ASSUME_ITS_EQUAL_I32(idx, -1);
 }
 
 FOSSIL_TEST(cpp_test_search_exec_binary_f64_ascpp_found) {
     double arr[] = {1.1, 2.2, 3.3, 4.4};
     double key = 3.3;
-    int idx = fossil_algorithm_search_exec(arr, 4, &key, "f64", "binary", "asc");
+    int idx = fossil::algorithm::Search::exec(arr, 4, &key, "f64", "binary", "asc");
     ASSUME_ITS_EQUAL_I32(idx, 2);
 }
 
 FOSSIL_TEST(cpp_test_search_exec_binary_f64_descpp_found) {
     double arr[] = {4.4, 3.3, 2.2, 1.1};
     double key = 2.2;
-    int idx = fossil_algorithm_search_exec(arr, 4, &key, "f64", "binary", "desc");
+    int idx = fossil::algorithm::Search::exec(arr, 4, &key, "f64", "binary", "desc");
     ASSUME_ITS_EQUAL_I32(idx, 2);
 }
 
 FOSSIL_TEST(cpp_test_search_exec_jump_u8_ascpp_found) {
     uint8_t arr[] = {1, 2, 3, 4, 5, 6, 7, 8};
     uint8_t key = 6;
-    int idx = fossil_algorithm_search_exec(arr, 8, &key, "u8", "jump", "asc");
+    int idx = fossil::algorithm::Search::exec(arr, 8, &key, "u8", "jump", "asc");
     ASSUME_ITS_EQUAL_I32(idx, 5);
 }
 
 FOSSIL_TEST(cpp_test_search_exec_interpolation_i32_ascpp_found) {
     int32_t arr[] = {10, 20, 30, 40, 50};
     int32_t key = 30;
-    int idx = fossil_algorithm_search_exec(arr, 5, &key, "i32", "interpolation", "asc");
+    int idx = fossil::algorithm::Search::exec(arr, 5, &key, "i32", "interpolation", "asc");
     ASSUME_ITS_EQUAL_I32(idx, 2);
 }
 
 FOSSIL_TEST(cpp_test_search_exec_interpolation_i32_unsupported_type) {
     float arr[] = {1.0f, 2.0f, 3.0f};
     float key = 2.0f;
-    int idx = fossil_algorithm_search_exec(arr, 3, &key, "f32", "interpolation", "asc");
+    int idx = fossil::algorithm::Search::exec(arr, 3, &key, "f32", "interpolation", "asc");
     ASSUME_ITS_EQUAL_I32(idx, -4);
 }
 
 FOSSIL_TEST(cpp_test_search_exec_exponential_i32_ascpp_found) {
     int arr[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
     int key = 7;
-    int idx = fossil_algorithm_search_exec(arr, 10, &key, "i32", "exponential", "asc");
+    int idx = fossil::algorithm::Search::exec(arr, 10, &key, "i32", "exponential", "asc");
     ASSUME_ITS_EQUAL_I32(idx, 6);
 }
 
 FOSSIL_TEST(cpp_test_search_exec_exponential_i32_descpp_found) {
     int arr[] = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
     int key = 4;
-    int idx = fossil_algorithm_search_exec(arr, 10, &key, "i32", "exponential", "desc");
+    int idx = fossil::algorithm::Search::exec(arr, 10, &key, "i32", "exponential", "desc");
     ASSUME_ITS_EQUAL_I32(idx, 6);
 }
 
 FOSSIL_TEST(cpp_test_search_exec_exponential_i32_not_found) {
     int arr[] = {1, 2, 3, 4, 5};
     int key = 8;
-    int idx = fossil_algorithm_search_exec(arr, 5, &key, "i32", "exponential", "asc");
+    int idx = fossil::algorithm::Search::exec(arr, 5, &key, "i32", "exponential", "asc");
     ASSUME_ITS_EQUAL_I32(idx, -1);
 }
 
 FOSSIL_TEST(cpp_test_search_exec_interpolation_u16_ascpp_found) {
     uint16_t arr[] = {2, 4, 6, 8, 10, 12, 14, 16};
     uint16_t key = 10;
-    int idx = fossil_algorithm_search_exec(arr, 8, &key, "u16", "interpolation", "asc");
+    int idx = fossil::algorithm::Search::exec(arr, 8, &key, "u16", "interpolation", "asc");
     ASSUME_ITS_EQUAL_I32(idx, 4);
 }
 
 FOSSIL_TEST(cpp_test_search_exec_fibonacci_i64_descpp_found) {
     int64_t arr[] = {100, 90, 80, 70, 60, 50};
     int64_t key = 70;
-    int idx = fossil_algorithm_search_exec(arr, 6, &key, "i64", "fibonacci", "desc");
+    int idx = fossil::algorithm::Search::exec(arr, 6, &key, "i64", "fibonacci", "desc");
     ASSUME_ITS_EQUAL_I32(idx, 3);
 }
 
 FOSSIL_TEST(cpp_test_search_exec_cstr_linear_found) {
     const char *arr[] = {"apple", "banana", "pear"};
     const char *key = "banana";
-    int idx = fossil_algorithm_search_exec(arr, 3, &key, "cstr", "linear", "asc");
+    int idx = fossil::algorithm::Search::exec(arr, 3, &key, "cstr", "linear", "asc");
     ASSUME_ITS_EQUAL_I32(idx, 1);
 }
 
 FOSSIL_TEST(cpp_test_search_exec_invalid_type) {
     int arr[] = {1, 2, 3};
     int key = 2;
-    int idx = fossil_algorithm_search_exec(arr, 3, &key, "notatype", "linear", "asc");
+    int idx = fossil::algorithm::Search::exec(arr, 3, &key, "notatype", "linear", "asc");
     ASSUME_ITS_EQUAL_I32(idx, -3);
 }
 
 FOSSIL_TEST(cpp_test_search_exec_invalid_algorithm) {
     int arr[] = {1, 2, 3};
     int key = 2;
-    int idx = fossil_algorithm_search_exec(arr, 3, &key, "i32", "notalgo", "asc");
+    int idx = fossil::algorithm::Search::exec(arr, 3, &key, "i32", "notalgo", "asc");
     ASSUME_ITS_EQUAL_I32(idx, -4);
 }
 
 FOSSIL_TEST(cpp_test_search_exec_null_base) {
     int key = 1;
-    int idx = fossil_algorithm_search_exec(NULL, 3, &key, "i32", "linear", "asc");
+    int idx = fossil::algorithm::Search::exec(NULL, 3, &key, "i32", "linear", "asc");
     ASSUME_ITS_EQUAL_I32(idx, -2);
 }
 
 FOSSIL_TEST(cpp_test_search_exec_null_key) {
     int arr[] = {1, 2, 3};
-    int idx = fossil_algorithm_search_exec(arr, 3, NULL, "i32", "linear", "asc");
+    int idx = fossil::algorithm::Search::exec(arr, 3, NULL, "i32", "linear", "asc");
     ASSUME_ITS_EQUAL_I32(idx, -2);
 }
 
 FOSSIL_TEST(cpp_test_search_exec_zero_count) {
     int arr[] = {1, 2, 3};
     int key = 2;
-    int idx = fossil_algorithm_search_exec(arr, 0, &key, "i32", "linear", "asc");
+    int idx = fossil::algorithm::Search::exec(arr, 0, &key, "i32", "linear", "asc");
     ASSUME_ITS_EQUAL_I32(idx, -2);
 }
 
 FOSSIL_TEST(cpp_test_search_type_sizeof_supported) {
-    ASSUME_ITS_TRUE(fossil_algorithm_search_type_sizeof("i64") == sizeof(int64_t));
-    ASSUME_ITS_TRUE(fossil_algorithm_search_type_sizeof("f32") == sizeof(float));
-    ASSUME_ITS_TRUE(fossil_algorithm_search_type_sizeof("cstr") == sizeof(char *));
+    ASSUME_ITS_TRUE(fossil::algorithm::Search::type_sizeof("i64") == sizeof(int64_t));
+    ASSUME_ITS_TRUE(fossil::algorithm::Search::type_sizeof("f32") == sizeof(float));
+    ASSUME_ITS_TRUE(fossil::algorithm::Search::type_sizeof("cstr") == sizeof(char *));
 }
 
 FOSSIL_TEST(cpp_test_search_type_supported_true_false) {
-    ASSUME_ITS_TRUE(fossil_algorithm_search_type_supported("u32") == true);
-    ASSUME_ITS_TRUE(fossil_algorithm_search_type_supported("null") == false);
+    ASSUME_ITS_TRUE(fossil::algorithm::Search::type_supported("u32") == true);
+    ASSUME_ITS_TRUE(fossil::algorithm::Search::type_supported("null") == false);
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * *
