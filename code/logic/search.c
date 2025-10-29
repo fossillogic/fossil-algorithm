@@ -319,19 +319,21 @@ static int search_interpolation(
 {
     // Only works for uniformly distributed sorted integer arrays
     // Enhanced: supports both ascending/descending, int32_t/int64_t, and uses comparator
+    if (count == 0 || !base || !key) return -2;
     if (size == sizeof(int32_t)) {
         const int32_t *arr = (const int32_t *)base;
         int32_t k = *(const int32_t *)key;
         size_t low = 0, high = count - 1;
 
-        while (low <= high && 
+        while (low <= high &&
                ((desc && k <= arr[low] && k >= arr[high]) ||
                 (!desc && k >= arr[low] && k <= arr[high]))) {
             if (arr[high] == arr[low]) {
                 if (cmp(&arr[low], &k, desc) == 0) return (int)low;
                 break;
             }
-            size_t pos = low + ((double)(high - low) * (k - arr[low])) / (arr[high] - arr[low]);
+            size_t pos = low + (size_t)(((double)(high - low) * (k - arr[low])) / (arr[high] - arr[low]));
+            if (pos < low || pos > high) break;
             if (cmp(&arr[pos], &k, desc) == 0)
                 return (int)pos;
             if ((desc && arr[pos] < k) || (!desc && arr[pos] > k))
@@ -345,14 +347,15 @@ static int search_interpolation(
         int64_t k = *(const int64_t *)key;
         size_t low = 0, high = count - 1;
 
-        while (low <= high && 
+        while (low <= high &&
                ((desc && k <= arr[low] && k >= arr[high]) ||
                 (!desc && k >= arr[low] && k <= arr[high]))) {
             if (arr[high] == arr[low]) {
                 if (cmp(&arr[low], &k, desc) == 0) return (int)low;
                 break;
             }
-            size_t pos = low + ((double)(high - low) * (k - arr[low])) / (arr[high] - arr[low]);
+            size_t pos = low + (size_t)(((double)(high - low) * (k - arr[low])) / (arr[high] - arr[low]));
+            if (pos < low || pos > high) break;
             if (cmp(&arr[pos], &k, desc) == 0)
                 return (int)pos;
             if ((desc && arr[pos] < k) || (!desc && arr[pos] > k))
@@ -370,15 +373,17 @@ static int search_exponential(
     const void *base, size_t count, const void *key,
     size_t size, fossil_search_compare_fn cmp, bool desc)
 {
-    if (count == 0) return -1;
+    if (count == 0 || !base || !key || !cmp) return -1;
     size_t bound = 1;
     const unsigned char *ptr = (const unsigned char *)base;
 
+    // Find range where key may be present
     while (bound < count && cmp(ptr + bound * size, key, desc) < 0)
         bound *= 2;
 
     size_t low = bound / 2;
     size_t high = bound < count ? bound : count;
+
     // Binary search in found range
     while (low < high) {
         size_t mid = low + (high - low) / 2;
