@@ -457,7 +457,7 @@ int fossil_algorithm_search_exec(
     bool desc = (order_id && strcmp(order_id, "desc") == 0);
     fossil_search_compare_fn cmp = fossil_search_select_comparator(type_id);
     if (!cmp)
-        return -3;
+        return -3; // unknown type
 
     if (!algorithm_id || !strcmp(algorithm_id, "auto") || !strcmp(algorithm_id, "linear"))
         return search_linear(base, count, key, type_size, cmp, desc);
@@ -468,8 +468,12 @@ int fossil_algorithm_search_exec(
     if (!strcmp(algorithm_id, "jump"))
         return search_jump(base, count, key, type_size, cmp, desc);
 
-    if (!strcmp(algorithm_id, "interpolation"))
+    if (!strcmp(algorithm_id, "interpolation")) {
+        // Only support int32_t and int64_t for interpolation
+        if (!(type_size == sizeof(int32_t) || type_size == sizeof(int64_t)))
+            return -4;
         return search_interpolation(base, count, key, type_size, cmp, desc);
+    }
 
     if (!strcmp(algorithm_id, "exponential"))
         return search_exponential(base, count, key, type_size, cmp, desc);
