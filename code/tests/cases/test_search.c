@@ -96,10 +96,31 @@ FOSSIL_TEST(c_test_search_exec_interpolation_i32_unsupported_type) {
     ASSUME_ITS_EQUAL_I32(idx, -4);
 }
 
-FOSSIL_TEST(c_test_search_exec_exponential_u16_asc_found) {
+FOSSIL_TEST(c_test_search_exec_exponential_i32_asc_found) {
+    int arr[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    int key = 7;
+    int idx = fossil_algorithm_search_exec(arr, 10, &key, "i32", "exponential", "asc");
+    ASSUME_ITS_EQUAL_I32(idx, 6);
+}
+
+FOSSIL_TEST(c_test_search_exec_exponential_i32_desc_found) {
+    int arr[] = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
+    int key = 4;
+    int idx = fossil_algorithm_search_exec(arr, 10, &key, "i32", "exponential", "desc");
+    ASSUME_ITS_EQUAL_I32(idx, 6);
+}
+
+FOSSIL_TEST(c_test_search_exec_exponential_i32_not_found) {
+    int arr[] = {1, 2, 3, 4, 5};
+    int key = 8;
+    int idx = fossil_algorithm_search_exec(arr, 5, &key, "i32", "exponential", "asc");
+    ASSUME_ITS_EQUAL_I32(idx, -1);
+}
+
+FOSSIL_TEST(c_test_search_exec_interpolation_u16_asc_found) {
     uint16_t arr[] = {2, 4, 6, 8, 10, 12, 14, 16};
     uint16_t key = 10;
-    int idx = fossil_algorithm_search_exec(arr, 8, &key, "u16", "exponential", "asc");
+    int idx = fossil_algorithm_search_exec(arr, 8, &key, "u16", "interpolation", "asc");
     ASSUME_ITS_EQUAL_I32(idx, 4);
 }
 
@@ -172,7 +193,10 @@ FOSSIL_TEST_GROUP(c_search_tests) {
     FOSSIL_TEST_ADD(c_algorithm_search_fixture, c_test_search_exec_jump_u8_asc_found);
     FOSSIL_TEST_ADD(c_algorithm_search_fixture, c_test_search_exec_interpolation_i32_asc_found);
     FOSSIL_TEST_ADD(c_algorithm_search_fixture, c_test_search_exec_interpolation_i32_unsupported_type);
-    FOSSIL_TEST_ADD(c_algorithm_search_fixture, c_test_search_exec_exponential_u16_asc_found);
+    FOSSIL_TEST_ADD(c_algorithm_search_fixture, c_test_search_exec_exponential_i32_asc_found);
+    FOSSIL_TEST_ADD(c_algorithm_search_fixture, c_test_search_exec_exponential_i32_desc_found);
+    FOSSIL_TEST_ADD(c_algorithm_search_fixture, c_test_search_exec_exponential_i32_not_found);
+    FOSSIL_TEST_ADD(c_algorithm_search_fixture, c_test_search_exec_interpolation_u16_asc_found);
     FOSSIL_TEST_ADD(c_algorithm_search_fixture, c_test_search_exec_fibonacci_i64_desc_found);
     FOSSIL_TEST_ADD(c_algorithm_search_fixture, c_test_search_exec_cstr_linear_found);
     FOSSIL_TEST_ADD(c_algorithm_search_fixture, c_test_search_exec_invalid_type);
