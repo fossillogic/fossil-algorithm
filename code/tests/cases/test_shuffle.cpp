@@ -118,7 +118,7 @@ FOSSIL_TEST(cpp_test_shuffle_exec_zero_count) {
 FOSSIL_TEST(cpp_test_shuffle_exec_null_type_id) {
     int arr[] = {1, 2, 3};
     int status = fossil::algorithm::Shuffle::exec(arr, 3, std::string(), "auto", "auto", 0);
-    ASSUME_ITS_EQUAL_I32(status, -1);
+    ASSUME_ITS_EQUAL_I32(status, -2);
 }
 
 FOSSIL_TEST(cpp_test_shuffle_type_sizeof_supported) {
