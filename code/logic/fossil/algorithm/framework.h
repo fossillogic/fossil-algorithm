@@ -25,6 +25,7 @@
 #ifndef FOSSIL_ALGORITHM_FRAMEWORK_H
 #define FOSSIL_ALGORITHM_FRAMEWORK_H
 
+#include "shuffle.h"
 #include "search.h"
 #include "sort.h"
 
